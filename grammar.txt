@@ -1,0 +1,69 @@
+program             :: stmt* EOF;
+
+stmt                :: simple_stmt | compound_stmt | flow_stmt;
+
+simple_stmt         :: expr_stmt | var_decl | val_decl | assignment;
+
+expr_stmt           :: expr ';';
+
+flow_stmt           :: break_stmt | continue_stmt | return_stmt;
+
+break_stmt          :: 'break';
+
+continue_stmt       :: 'continue';
+
+return_stmt         :: 'return' (expr)?;
+
+compound_stmt       :: if_stmt | while_stmt | for_stmt | fun_decl;
+
+if_stmt             :: 'if' expr block;
+
+while_stmt          :: 'while' expr block;
+
+for_stmt            :: 'for' (simple_stmt)? ';' (expr)? ';' (simple_stmt)? block;
+
+fun_decl            :: 'fun' IDENTIFIER '(' (parameters)? ')' block;
+
+parameters          :: IDENTIFIER (',' IDENTIFIER)*;
+
+block               :: '{' stmt_list '}';
+
+stmt_list           :: (stmt ';')*;
+
+var_decl            :: 'var' IDENTIFIER ('=' expr)?;
+
+val_decl            :: 'val' IDENTIFIER '=' expr;
+
+assignment          :: IDENTIFIER '=' expr;
+
+expr                :: logic_or;
+
+logic_or            :: logic_and ('or' logic_and)*;
+
+logic_and           :: equality ('and' equality)*;
+
+equality            :: comparison (('==' | '!=') comparison)*;
+
+comparison          :: arith_expr (('<' | '<=' | '>' | '>=') arith_expr)*;
+
+arith_expr          :: term (('+' | '-') term)*;
+
+term                :: factor (('*' | '/') factor)*;
+
+factor              :: ('-' | '!') factor | primary;
+
+primary             :: literal | IDENTIFIER | '(' expr ')' | index;
+
+index               :: '[' expr ']';
+
+literal             :: 'true' | 'false' | 'nil' | STRING | NUMBER;
+
+NUMBER              :: DIGIT+ ('.' DIGIT+)?;
+
+DIGIT               :: '0' ... '9';
+
+STRING              :: '"' <any char expect '"'>* '"';
+
+IDENTIFIER          :: ALPHA (ALPHA | DIGIT)*;
+
+ALPHA               :: 'a' ... 'z' | 'A' ... 'Z' | '_';
