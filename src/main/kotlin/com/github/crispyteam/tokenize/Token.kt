@@ -14,7 +14,7 @@ enum class TokenType {
     SMALLER_EQUALS, GREATER_EQUALS,
 
     /* Literals */
-    STRINGS,
+    STRING,
     NUMBER, IDENTIFIER,
 
     /* Keywords */
@@ -23,3 +23,11 @@ enum class TokenType {
 
     EOF
 }
+
+data class Token(
+        val type: TokenType,
+        val line: Int,
+        val startPos: Int,
+        val endPos: Int,
+        val literal: Any?
+)
