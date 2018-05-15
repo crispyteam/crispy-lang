@@ -12,6 +12,7 @@ enum class TokenType {
     EQUALS_EQUALS,
     BANG_EQUALS,
     SMALLER_EQUALS, GREATER_EQUALS,
+    PLUS_PLUS, MINUS_MINUS, MINUS_GREATER,
 
     /* Literals */
     STRING,

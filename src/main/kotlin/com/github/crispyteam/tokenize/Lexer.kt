@@ -222,15 +222,22 @@ class Lexer(private val source: String) {
             ']' -> addToken(CLOSE_BRACKET)
             ':' -> addToken(COLON)
             '%' -> addToken(PERCENT)
-            '+' -> addToken(PLUS)
-            '-' -> addToken(MINUS)
+            '+' -> {
+                if (match('+'))
+                    addToken(PLUS_PLUS)
+                else
+                    addToken(PLUS)
+            }
+            '-' -> when {
+                match('>') -> addToken(MINUS_GREATER)
+                match('-') -> addToken(MINUS_MINUS)
+                else -> addToken(MINUS)
+            }
             '*' -> addToken(STAR)
-            '/' -> {
-                when {
-                    match('/') -> lineComment()
-                    match('*') -> multiLineComment()
-                    else -> addToken(SLASH)
-                }
+            '/' -> when {
+                match('/') -> lineComment()
+                match('*') -> multiLineComment()
+                else -> addToken(SLASH)
             }
             '.' -> addToken(DOT)
             ';' -> addToken(SEMICOLON)
