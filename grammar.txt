@@ -26,7 +26,7 @@ for_stmt            :: 'for' (simple_stmt)? ';' (expr)? ';' (simple_stmt)? block
 
 fun_decl            :: 'fun' IDENTIFIER function
 
-function			      :: '(' (parameters)? ')' (block | '->' compound_stmt);
+function			:: '(' (parameters)? ')' (block | '->' compound_stmt);
 
 parameters          :: IDENTIFIER (',' IDENTIFIER)*;
 
@@ -56,7 +56,7 @@ term                :: factor (('*' | '/') factor)*;
 
 factor              :: ('-' | '!') factor | primary_epxr;
 
-primary_epxr		    :: primary (call)*;
+primary_epxr		:: primary (call)*;
 
 primary             :: literal | IDENTIFIER | '(' expr ')' | 
                        '{' (dict_items)? '}' | '[' (list_items)? ']';
@@ -65,9 +65,9 @@ call                :: '(' arg_list? ')' | '[' expr ']';
 
 arg_list            :: expr (',' expr)*;
 
-dict_items			    :: expr ':' expr (',' dict_items)*;
+dict_items			:: expr ':' expr (',' dict_items)*;
 
-list_items			    :: expr (',' expr)*;
+list_items			:: expr (',' expr)*;
 
 literal             :: 'true' | 'false' | 'nil' | STRING | NUMBER;
 
