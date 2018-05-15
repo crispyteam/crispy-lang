@@ -34,7 +34,7 @@ var_decl            :: 'var' IDENTIFIER ('=' expr)?;
 
 val_decl            :: 'val' IDENTIFIER '=' expr;
 
-assignment          :: IDENTIFIER '=' expr;
+assignment          :: expr '=' expr;
 
 expr                :: logic_or;
 
@@ -52,7 +52,11 @@ term                :: factor (('*' | '/') factor)*;
 
 factor              :: ('-' | '!') factor | primary;
 
-primary             :: literal | IDENTIFIER | '(' expr ')' | index;
+primary             :: literal | IDENTIFIER | '(' expr ')' | 
+                       '{' (expr ':' expr)* '}' | '[' list_items ']'
+                       primary index;
+
+list_items			:: expr (',' expr)*;
 
 index               :: '[' expr ']';
 
