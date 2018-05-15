@@ -14,7 +14,7 @@ continue_stmt       :: 'continue';
 
 return_stmt         :: 'return' (expr)?;
 
-compound_stmt       :: if_stmt | while_stmt | for_stmt | fun_decl;
+compound_stmt       :: if_stmt | while_stmt | for_stmt | fun_decl | block;
 
 if_stmt             :: 'if' expr block;
 
