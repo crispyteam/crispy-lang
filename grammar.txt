@@ -55,7 +55,7 @@ term                :: factor (('*' | '/') factor)*;
 factor              :: ('-' | '!') factor | primary;
 
 primary             :: literal | IDENTIFIER | '(' expr ')' | 
-                       '{' (expr ':' (expr | function)* '}' | '[' list_items ']'
+                       '{' (expr ':' (expr | function))* '}' | '[' list_items ']'
                        primary index;
 
 list_items			    :: expr (',' expr)*;
