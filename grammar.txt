@@ -24,7 +24,7 @@ for_stmt            :: 'for' (simple_stmt)? ';' (expr)? ';' (simple_stmt)? block
 
 fun_decl            :: 'fun' IDENTIFIER function
 
-function			:: '(' (parameters)? ')' block;
+function			:: '(' (parameters)? ')' (block | '->' compound_stmt);
 
 parameters          :: IDENTIFIER (',' IDENTIFIER)*;
 
@@ -38,7 +38,7 @@ val_decl            :: 'val' IDENTIFIER '=' expr;
 
 assignment          :: expr '=' expr;
 
-expr                :: logic_or;
+expr                :: logic_or | function;
 
 logic_or            :: logic_and ('or' logic_and)*;
 
