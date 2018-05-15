@@ -8,11 +8,11 @@ expr_stmt           :: expr ';';
 
 flow_stmt           :: break_stmt | continue_stmt | return_stmt;
 
-break_stmt          :: 'break';
+break_stmt          :: 'break' ';';
 
-continue_stmt       :: 'continue';
+continue_stmt       :: 'continue' ';';
 
-return_stmt         :: 'return' (expr)?;
+return_stmt         :: 'return' (expr)? ';';
 
 compound_stmt       :: if_stmt | while_stmt | for_stmt | fun_decl | block;
 
@@ -24,7 +24,7 @@ for_stmt            :: 'for' (simple_stmt)? ';' (expr)? ';' (simple_stmt)? block
 
 fun_decl            :: 'fun' IDENTIFIER function
 
-function			      :: '(' (parameters)? ')' block;
+function			:: '(' (parameters)? ')' block;
 
 parameters          :: IDENTIFIER (',' IDENTIFIER)*;
 
@@ -58,7 +58,7 @@ primary             :: literal | IDENTIFIER | '(' expr ')' |
                        '{' (expr ':' (expr | function))* '}' | '[' list_items ']'
                        primary index;
 
-list_items			    :: expr (',' expr)*;
+list_items			:: expr (',' expr)*;
 
 index               :: '[' expr ']';
 
