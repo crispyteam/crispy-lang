@@ -63,7 +63,7 @@ call                :: '(' arg_list? ')' | '[' expr ']';
 
 arg_list            :: expr (',' expr)*;
 
-dict_items			:: expr ':' (expr | function) (',' dict_items)*;
+dict_items			:: expr ':' expr (',' dict_items)*;
 
 list_items			:: expr (',' expr)*;
 
