@@ -22,7 +22,9 @@ while_stmt          :: 'while' expr block;
 
 for_stmt            :: 'for' (simple_stmt)? ';' (expr)? ';' (simple_stmt)? block;
 
-fun_decl            :: 'fun' IDENTIFIER '(' (parameters)? ')' block;
+fun_decl            :: 'fun' IDENTIFIER function
+
+function			      :: '(' (parameters)? ')' block;
 
 parameters          :: IDENTIFIER (',' IDENTIFIER)*;
 
@@ -53,10 +55,10 @@ term                :: factor (('*' | '/') factor)*;
 factor              :: ('-' | '!') factor | primary;
 
 primary             :: literal | IDENTIFIER | '(' expr ')' | 
-                       '{' (expr ':' expr)* '}' | '[' list_items ']'
+                       '{' (expr ':' (expr | function)* '}' | '[' list_items ']'
                        primary index;
 
-list_items			:: expr (',' expr)*;
+list_items			    :: expr (',' expr)*;
 
 index               :: '[' expr ']';
 
