@@ -2,11 +2,11 @@ program             :: stmt* EOF;
 
 stmt                :: simple_stmt | compound_stmt | flow_stmt;
 
-simple_stmt         :: expr_stmt | var_decl | val_decl | assignment | inc_dec_stmt;
+simple_stmt         :: expr_stmt | var_decl | val_decl | fun_decl;
+
+expr_stmt           :: expr ';' | assignment | inc_dec_stmt;
 
 inc_dec_stmt        :: expr ('++' | '--');
-
-expr_stmt           :: expr ';';
 
 flow_stmt           :: break_stmt | continue_stmt | return_stmt;
 
@@ -16,7 +16,7 @@ continue_stmt       :: 'continue' ';';
 
 return_stmt         :: 'return' (expr)? ';';
 
-compound_stmt       :: if_stmt | while_stmt | for_stmt | fun_decl | block;
+compound_stmt       :: if_stmt | while_stmt | for_stmt | block;
 
 if_stmt             :: 'if' expr block;
 
@@ -24,9 +24,9 @@ while_stmt          :: 'while' expr block;
 
 for_stmt            :: 'for' (simple_stmt)? ';' (expr)? ';' (simple_stmt)? block;
 
-fun_decl            :: 'fun' IDENTIFIER function
+fun_decl            :: 'fun' IDENTIFIER '(' (parameters)? ')' block;
 
-function			:: '(' (parameters)? ')' (block | '->' compound_stmt);
+lambda				:: '(' (parameters)? ')' '->' (expr_stmt | block);
 
 parameters          :: IDENTIFIER (',' IDENTIFIER)*;
 
@@ -40,7 +40,7 @@ val_decl            :: 'val' IDENTIFIER '=' expr;
 
 assignment          :: expr '=' expr;
 
-expr                :: logic_or | function;
+expr                :: logic_or | lambda;
 
 logic_or            :: logic_and ('or' logic_and)*;
 

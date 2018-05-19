@@ -3,7 +3,25 @@ package com.github.crispyteam.tools
 import java.io.PrintWriter
 
 fun main(args: Array<String>) {
+    defineAst("src/main/kotlin/com/github/crispyteam/parse", "Stmt", listOf(
+            "Expression     = expr: Expr",
+            "Assignment     = name: Expr, value: Expr",
+            "IncDec         = operator: Token, expr: Expr",
+            "Return         = keyword: Token, expr: Expr?",
+            "Break          = keyword: Token",
+            "Continue       = keyword: Token",
+            "Block          = statements: List<Stmt>",
+            "If             = condition: Expr, block: Block",
+            "VariableDecl   = value: Expr, assignable: Boolean"
+    ))
 
+    defineAst("src/main/kotlin/com/github/crispyteam/parse", "Expr", listOf(
+            "Binary     = left: Expr, operator: Token, right: Expr",
+            "Unary      = operator: Token, expr: Expr",
+            "Lambda     = parameters: List<Token>, body: Stmt",
+            "Call       = callee: Expr, arguments: List<Expr>, paren: Token",
+            "Get        = obj: Expr, key: Expr, brace: Token"
+    ))
 }
 
 fun defineAst(outputDir: String, baseName: String, types: List<String>) {
@@ -14,9 +32,9 @@ fun defineAst(outputDir: String, baseName: String, types: List<String>) {
         val typeNames = ArrayList<String>()
 
         print("""
-       package com.provinzial.klox.parsing
+       package com.github.crispyteam.parse
 
-       import com.provinzial.klox.lexing.Token
+       import com.github.crispyteam.tokenize.Token
 
 
        """.trimIndent())
