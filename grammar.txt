@@ -34,11 +34,9 @@ val_decl            :: 'val' IDENTIFIER '=' expr ';';
 
 expr                :: assignment | lambda;
 
-assignment          :: logic_or ('=' assignment | inc_dec_expr)?;
+assignment          :: logic_or ('=' assignment | ('++' | '--'))?;
 
 lambda				:: 'fun' (parameters)? '->' (expr | block);
-
-inc_dec_expr        :: expr ('++' | '--');
 
 logic_or            :: logic_and ('or' logic_and)*;
 
@@ -59,7 +57,7 @@ primary_epxr		:: primary (call)*;
 primary             :: literal | IDENTIFIER | '(' expr ')' | 
                        '{' (dict_items)? '}' | '[' (arg_list)? ']';
 
-call                :: '(' arg_list? ')' | '[' expr ']';
+call                :: '(' arg_list? ')' | '[' expr ']' | '.' IDENTIFIER;
 
 arg_list            :: expr (',' expr)*;
 

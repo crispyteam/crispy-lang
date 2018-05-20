@@ -302,17 +302,28 @@ class Parser {
     private fun primaryExpr(): Expr {
         var primary = primary()
 
-        while (match(OPEN_PAREN, OPEN_BRACKET)) {
-            primary = if (previous().type == OPEN_PAREN) {
-                val args: List<Expr> = if (match(CLOSE_PAREN))
-                    emptyList()
-                else
-                    argList()
-                Expr.Call(primary, args, previous())
-            } else {
-                val expr = expr()
-                consume(CLOSE_BRACKET, "Expected ']' after get expression")
-                Expr.Get(primary, expr, previous())
+        while (match(OPEN_PAREN, OPEN_BRACKET, DOT)) {
+            primary = when (previous().type) {
+                OPEN_PAREN -> {
+                    val paren = previous()
+                    val args: List<Expr> = if (match(CLOSE_PAREN))
+                        emptyList()
+                    else
+                        argList()
+                    Expr.Call(primary, args, paren)
+                }
+                OPEN_BRACKET -> {
+                    val bracket = previous()
+                    val expr = expr()
+                    consume(CLOSE_BRACKET, "Expected ']' after get expression")
+                    Expr.Get(primary, expr, bracket)
+                }
+                DOT -> {
+                    val dot = previous()
+                    val ident = consume(IDENTIFIER, "Expected identifer after '.'")
+                    Expr.Get(primary, Expr.Literal(ident.literal), dot)
+                }
+                else -> throw error(previous(), "Unexpected Token")
             }
         }
 
