@@ -65,6 +65,24 @@ abstract class Expr {
          }
      }
 
+    data class Assignment(val  name: Expr, val  value: Expr): Expr() {
+         override fun <T> accept(visitor: Visitor<T>): T {
+              return visitor.visitAssignment(this)
+         }
+     }
+
+    data class Increment(val  variable: Expr): Expr() {
+         override fun <T> accept(visitor: Visitor<T>): T {
+              return visitor.visitIncrement(this)
+         }
+     }
+
+    data class Decrement(val  variable: Expr): Expr() {
+         override fun <T> accept(visitor: Visitor<T>): T {
+              return visitor.visitDecrement(this)
+         }
+     }
+
     interface Visitor<T> {
         fun visitBinary(binaryExpr: Binary): T
         fun visitUnary(unaryExpr: Unary): T
@@ -76,5 +94,8 @@ abstract class Expr {
         fun visitGrouping(groupingExpr: Grouping): T
         fun visitDictionary(dictionaryExpr: Dictionary): T
         fun visitCrispyList(crispylistExpr: CrispyList): T
+        fun visitAssignment(assignmentExpr: Assignment): T
+        fun visitIncrement(incrementExpr: Increment): T
+        fun visitDecrement(decrementExpr: Decrement): T
     }
 }

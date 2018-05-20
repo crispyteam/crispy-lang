@@ -2,11 +2,9 @@ program             :: stmt* EOF;
 
 stmt                :: simple_stmt | compound_stmt | flow_stmt;
 
-simple_stmt         :: expr_stmt ';' | var_decl | val_decl | assignment;
+simple_stmt         :: expr_stmt | var_decl | val_decl;
 
-expr_stmt           :: expr | inc_dec_stmt;
-
-inc_dec_stmt        :: expr ('++' | '--');
+expr_stmt           :: expr ';';
 
 flow_stmt           :: break_stmt | continue_stmt | return_stmt;
 
@@ -22,9 +20,7 @@ if_stmt             :: 'if' expr block ('else' (if_stmt | block))?;
 
 while_stmt          :: 'while' expr block;
 
-for_stmt            :: 'for' (simple_stmt)? ';' (expr)? ';' (simple_stmt)? block;
-
-lambda				:: 'fun' (parameters)? '->' (expr_stmt | block);
+for_stmt            :: 'for' (var_decl | expr)? ';' (expr)? ';' (expr)? block;
 
 parameters          :: IDENTIFIER (',' IDENTIFIER)*;
 
@@ -36,9 +32,13 @@ var_decl            :: 'var' IDENTIFIER ('=' expr)? ';';
 
 val_decl            :: 'val' IDENTIFIER '=' expr ';';
 
-assignment          :: expr '=' expr ';';
+expr                :: assignment | lambda;
 
-expr                :: logic_or | lambda;
+assignment          :: logic_or ('=' assignment | inc_dec_expr)?;
+
+lambda				:: 'fun' (parameters)? '->' (expr | block);
+
+inc_dec_expr        :: expr ('++' | '--');
 
 logic_or            :: logic_and ('or' logic_and)*;
 

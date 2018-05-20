@@ -69,9 +69,6 @@ class Parser {
     private fun check(type: TokenType): Boolean =
             peek().type == type
 
-    private fun checkNext(type: TokenType): Boolean =
-            peekNext()?.type == type
-
     private fun stmt(): Stmt =
             when {
             // flow statements
@@ -90,27 +87,13 @@ class Parser {
             when {
                 match(VAL) -> valDecl()
                 match(VAR) -> varDecl()
-                checkNext(EQUALS) -> assignment()
-                else -> {
-                    val stmt = exprStmt()
-                    consume(SEMICOLON, "Expected ';' after statement")
-                    stmt
-                }
+                else -> exprStmt()
             }
 
-    private fun assignment(): Stmt.Assignment {
-        val name = expr()
-        consume(EQUALS, "Expected '=' after identifier in assignment")
-        return Stmt.Assignment(name, expr())
-    }
-
     private fun exprStmt(): Stmt {
-        val firstExpr = expr()
-
-        return when {
-            match(PLUS_PLUS) || match(MINUS_MINUS) -> Stmt.IncDec(previous(), firstExpr)
-            else -> Stmt.Expression(expr = firstExpr)
-        }
+        val expr = expr()
+        consume(SEMICOLON, "Expected ';' after statement")
+        return Stmt.Expression(expr)
     }
 
     private fun returnStmt(): Stmt.Return =
@@ -140,7 +123,7 @@ class Parser {
         consume(MINUS_GREATER, "Expected '->' after parameters")
         val body = when {
             check(OPEN_BRACE) -> block()
-            else -> exprStmt()
+            else -> Stmt.Expression(expr())
         }
 
         return Expr.Lambda(params, body)
@@ -159,11 +142,45 @@ class Parser {
     }
 
     private fun forStmt(): Stmt {
-        TODO()
+        val initializer: Stmt? = when {
+            match(SEMICOLON) -> null
+            match(VAR) -> varDecl()
+            else -> exprStmt()
+        }
+
+        var condition: Expr? = when {
+            check(SEMICOLON) -> null
+            else -> expr()
+        }
+        consume(SEMICOLON, "Expected ';' after loop condition")
+
+        val increment: Expr? = when {
+            check(OPEN_BRACE) -> null
+            else -> expr()
+        }
+
+        var body = block() as Stmt
+
+        // add increment after block
+        if (increment != null) {
+            body = Stmt.Block(listOf(body, Stmt.Expression(increment)))
+        }
+
+        condition = condition ?: Expr.Literal(true)
+        body = Stmt.While(condition, body)
+
+        if (initializer != null) {
+            body = Stmt.Block(listOf(initializer, body))
+        }
+
+        return body
     }
 
-    private fun whileStmt(): Stmt {
-        TODO()
+    private fun whileStmt(): Stmt.While {
+        val condition = expr()
+        val block = block()
+
+        return Stmt.While(condition, block)
     }
 
     private fun ifStmt(): Stmt.If {
@@ -207,8 +224,19 @@ class Parser {
     private fun expr(): Expr =
             when {
                 match(FUN) -> lambda()
-                else -> logicOr()
+                else -> assignment()
             }
+
+    private fun assignment(): Expr {
+        val result = logicOr()
+
+        return when {
+            match(EQUALS) -> Expr.Assignment(result, assignment())
+            match(PLUS_PLUS) -> Expr.Increment(result)
+            match(MINUS_MINUS) -> Expr.Decrement(result)
+            else -> result
+        }
+    }
 
     private fun logicOr(): Expr {
         var result = logicAnd()

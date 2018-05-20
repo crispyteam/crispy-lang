@@ -11,12 +11,6 @@ abstract class Stmt {
          }
      }
 
-    data class Assignment(val  name: Expr, val  value: Expr): Stmt() {
-         override fun <T> accept(visitor: Visitor<T>): T {
-              return visitor.visitAssignment(this)
-         }
-     }
-
     data class IncDec(val  operator: Token, val  expr: Expr): Stmt() {
          override fun <T> accept(visitor: Visitor<T>): T {
               return visitor.visitIncDec(this)
@@ -65,9 +59,14 @@ abstract class Stmt {
          }
      }
 
+    data class While(val  condition: Expr, val  block: Stmt): Stmt() {
+         override fun <T> accept(visitor: Visitor<T>): T {
+              return visitor.visitWhile(this)
+         }
+     }
+
     interface Visitor<T> {
         fun visitExpression(expressionStmt: Expression): T
-        fun visitAssignment(assignmentStmt: Assignment): T
         fun visitIncDec(incdecStmt: IncDec): T
         fun visitReturn(returnStmt: Return): T
         fun visitBreak(breakStmt: Break): T
@@ -76,5 +75,6 @@ abstract class Stmt {
         fun visitIf(ifStmt: If): T
         fun visitValDecl(valdeclStmt: ValDecl): T
         fun visitVarDecl(vardeclStmt: VarDecl): T
+        fun visitWhile(whileStmt: While): T
     }
 }

@@ -5,7 +5,6 @@ import java.io.PrintWriter
 fun main(args: Array<String>) {
     defineAst("src/main/kotlin/com/github/crispyteam/parse", "Stmt", listOf(
             "Expression     = expr: Expr",
-            "Assignment     = name: Expr, value: Expr",
             "IncDec         = operator: Token, expr: Expr",
             "Return         = keyword: Token, expr: Expr?",
             "Break          = keyword: Token",
@@ -13,7 +12,8 @@ fun main(args: Array<String>) {
             "Block          = statements: List<Stmt>",
             "If             = condition: Expr, thenBlock: Block, elseBlock: Stmt?",
             "ValDecl        = name: Token, value: Expr",
-            "VarDecl        = name: Token, value: Expr?"
+            "VarDecl        = name: Token, value: Expr?",
+            "While          = condition: Expr, block: Stmt"
     ))
 
     defineAst("src/main/kotlin/com/github/crispyteam/parse", "Expr", listOf(
@@ -26,7 +26,10 @@ fun main(args: Array<String>) {
             "Variable   = name: Token",
             "Grouping   = expr: Expr",
             "Dictionary = pairs: List<Pair<Expr; Expr>>",
-            "CrispyList = items: List<Expr>"
+            "CrispyList = items: List<Expr>",
+            "Assignment = name: Expr, value: Expr",
+            "Increment  = variable: Expr",
+            "Decrement  = variable: Expr"
     ))
 }
 
