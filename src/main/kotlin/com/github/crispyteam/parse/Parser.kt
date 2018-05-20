@@ -30,12 +30,6 @@ class Parser {
     private fun peek(): Token =
             tokens[position]
 
-    private fun peekNext(): Token? =
-            if (position + 1 < tokens.size)
-                tokens[position + 1]
-            else
-                null
-
     private fun consume(type: TokenType, msg: String): Token {
         if (check(type)) {
             advance()
@@ -111,7 +105,6 @@ class Parser {
 
         while (!match(CLOSE_BRACE)) {
             list += stmt()
-            consume(SEMICOLON, "Expected ';' after statement")
         }
 
         return Stmt.Block(list)
