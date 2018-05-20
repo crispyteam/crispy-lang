@@ -35,11 +35,46 @@ abstract class Expr {
          }
      }
 
+    data class Literal(val  value: Any?): Expr() {
+         override fun <T> accept(visitor: Visitor<T>): T {
+              return visitor.visitLiteral(this)
+         }
+     }
+
+    data class Variable(val  name: Token): Expr() {
+         override fun <T> accept(visitor: Visitor<T>): T {
+              return visitor.visitVariable(this)
+         }
+     }
+
+    data class Grouping(val  expr: Expr): Expr() {
+         override fun <T> accept(visitor: Visitor<T>): T {
+              return visitor.visitGrouping(this)
+         }
+     }
+
+    data class Dictionary(val  pairs: List<Pair<Expr, Expr>>): Expr() {
+         override fun <T> accept(visitor: Visitor<T>): T {
+              return visitor.visitDictionary(this)
+         }
+     }
+
+    data class CrispyList(val  items: List<Expr>): Expr() {
+         override fun <T> accept(visitor: Visitor<T>): T {
+              return visitor.visitCrispyList(this)
+         }
+     }
+
     interface Visitor<T> {
         fun visitBinary(binaryExpr: Binary): T
         fun visitUnary(unaryExpr: Unary): T
         fun visitLambda(lambdaExpr: Lambda): T
         fun visitCall(callExpr: Call): T
         fun visitGet(getExpr: Get): T
+        fun visitLiteral(literalExpr: Literal): T
+        fun visitVariable(variableExpr: Variable): T
+        fun visitGrouping(groupingExpr: Grouping): T
+        fun visitDictionary(dictionaryExpr: Dictionary): T
+        fun visitCrispyList(crispylistExpr: CrispyList): T
     }
 }

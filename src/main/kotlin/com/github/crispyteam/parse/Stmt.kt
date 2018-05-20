@@ -47,15 +47,21 @@ abstract class Stmt {
          }
      }
 
-    data class If(val  condition: Expr, val  block: Block): Stmt() {
+    data class If(val  condition: Expr, val  thenBlock: Block, val  elseBlock: Stmt?): Stmt() {
          override fun <T> accept(visitor: Visitor<T>): T {
               return visitor.visitIf(this)
          }
      }
 
-    data class VariableDecl(val  value: Expr, val  assignable: Boolean): Stmt() {
+    data class ValDecl(val  name: Token, val  value: Expr): Stmt() {
          override fun <T> accept(visitor: Visitor<T>): T {
-              return visitor.visitVariableDecl(this)
+              return visitor.visitValDecl(this)
+         }
+     }
+
+    data class VarDecl(val  name: Token, val  value: Expr?): Stmt() {
+         override fun <T> accept(visitor: Visitor<T>): T {
+              return visitor.visitVarDecl(this)
          }
      }
 
@@ -68,6 +74,7 @@ abstract class Stmt {
         fun visitContinue(continueStmt: Continue): T
         fun visitBlock(blockStmt: Block): T
         fun visitIf(ifStmt: If): T
-        fun visitVariableDecl(variabledeclStmt: VariableDecl): T
+        fun visitValDecl(valdeclStmt: ValDecl): T
+        fun visitVarDecl(vardeclStmt: VarDecl): T
     }
 }

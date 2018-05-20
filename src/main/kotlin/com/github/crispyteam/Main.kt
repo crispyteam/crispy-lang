@@ -1,5 +1,6 @@
 package com.github.crispyteam
 
+import com.github.crispyteam.parse.Parser
 import com.github.crispyteam.tokenize.Lexer
 import com.github.crispyteam.tokenize.Token
 import java.io.File
@@ -48,7 +49,7 @@ fun runInteractive() {
 
 fun run(program: String) {
     val lexer = Lexer(program)
-    val tokens = lexer.lex()
+    val parser = Parser()
 
-    println(tokens)
+    println(parser.parse(lexer))
 }

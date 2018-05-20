@@ -23,15 +23,25 @@ class Parser {
         return statements
     }
 
+    private fun error(token: Token, message: String): ParseError {
+        return ParseError(token, message)
+    }
+
     private fun peek(): Token =
             tokens[position]
+
+    private fun peekNext(): Token? =
+            if (position + 1 < tokens.size)
+                tokens[position + 1]
+            else
+                null
 
     private fun consume(type: TokenType, msg: String): Token {
         if (check(type)) {
             advance()
             return previous()
         }
-        throw ParseError(peek(), msg)
+        throw error(peek(), msg)
     }
 
     private fun atEnd(): Boolean =
@@ -59,6 +69,9 @@ class Parser {
     private fun check(type: TokenType): Boolean =
             peek().type == type
 
+    private fun checkNext(type: TokenType): Boolean =
+            peekNext()?.type == type
+
     private fun stmt(): Stmt =
             when {
             // flow statements
@@ -77,17 +90,26 @@ class Parser {
             when {
                 match(VAL) -> valDecl()
                 match(VAR) -> varDecl()
-                else -> exprStmt()
+                checkNext(EQUALS) -> assignment()
+                else -> {
+                    val stmt = exprStmt()
+                    consume(SEMICOLON, "Expected ';' after statement")
+                    stmt
+                }
             }
+
+    private fun assignment(): Stmt.Assignment {
+        val name = expr()
+        consume(EQUALS, "Expected '=' after identifier in assignment")
+        return Stmt.Assignment(name, expr())
+    }
 
     private fun exprStmt(): Stmt {
         val firstExpr = expr()
 
         return when {
-            match(SEMICOLON) -> Stmt.Expression(expr = firstExpr)
-            match(EQUALS) -> Stmt.Assignment(firstExpr, expr())
             match(PLUS_PLUS) || match(MINUS_MINUS) -> Stmt.IncDec(previous(), firstExpr)
-            else -> throw ParseError(peek(), "Unexpected Token")
+            else -> Stmt.Expression(expr = firstExpr)
         }
     }
 
@@ -115,58 +137,71 @@ class Parser {
     private fun lambda(): Expr.Lambda {
         val params = paramList()
 
-        val body = if (match(MINUS_GREATER)) {
-            when {
-                match(IF) -> ifStmt()
-                match(WHILE) -> whileStmt()
-                match(FOR) -> forStmt()
-                check(OPEN_BRACE) -> block()
-                else -> exprStmt()
-            }
-        } else {
-            block()
+        consume(MINUS_GREATER, "Expected '->' after parameters")
+        val body = when {
+            check(OPEN_BRACE) -> block()
+            else -> exprStmt()
         }
 
         return Expr.Lambda(params, body)
     }
 
     private fun paramList(): List<Token> {
-        consume(OPEN_PAREN, "Expected '(' at beginning of function")
         val params = ArrayList<Token>()
 
-        if (!check(CLOSE_PAREN)) {
+        if (!check(MINUS_GREATER)) {
             do {
                 params += consume(IDENTIFIER, "Expected parameter name")
             } while (match(COMMA))
         }
 
-        consume(CLOSE_PAREN, "Expected ')' after parameters")
-        return params;
+        return params
     }
 
     private fun forStmt(): Stmt {
-
+        TODO()
     }
 
     private fun whileStmt(): Stmt {
-
+        TODO()
     }
 
     private fun ifStmt(): Stmt.If {
         val condition = expr()
         val block = block()
 
-        return Stmt.If(condition, block)
+        val elseBranch = if (match(ELSE)) {
+            if (check(OPEN_BRACE)) {
+                block()
+            } else {
+                consume(IF, "Expected if or block after else")
+                ifStmt()
+            }
+        } else {
+            null
+        }
+
+        return Stmt.If(condition, block, elseBranch)
     }
 
-    private fun valDecl(): Stmt.VariableDecl {
+    private fun valDecl(): Stmt.ValDecl {
+        val name = consume(IDENTIFIER, "Expected variable name after 'val'")
+        consume(EQUALS, "Expected initialization of value")
         val value = expr()
-        return Stmt.VariableDecl(value, assignable = false)
+
+        consume(SEMICOLON, "Expected ';' after val initialization")
+        return Stmt.ValDecl(name, value)
     }
 
-    private fun varDecl(): Stmt {
-        val value = expr()
-        return Stmt.VariableDecl(value, assignable = true)
+    private fun varDecl(): Stmt.VarDecl {
+        val name = consume(IDENTIFIER, "Expected variable name after 'var'")
+        val value = if (match(EQUALS)) {
+            expr()
+        } else {
+            null
+        }
+        consume(SEMICOLON, "Expected ';' after var initialization")
+        return Stmt.VarDecl(name, value)
     }
 
     private fun expr(): Expr =
@@ -246,14 +281,89 @@ class Parser {
     private fun primaryExpr(): Expr {
         var primary = primary()
 
+        while (match(OPEN_PAREN, OPEN_BRACKET)) {
+            primary = if (previous().type == OPEN_PAREN) {
+                val args: List<Expr> = if (match(CLOSE_PAREN))
+                    emptyList()
+                else
+                    argList()
+                Expr.Call(primary, args, previous())
+            } else {
+                val expr = expr()
+                consume(CLOSE_BRACKET, "Expected ']' after get expression")
+                Expr.Get(primary, expr, previous())
+            }
+        }
 
+        return primary
     }
 
-    private fun call(): Expr? {
+    private fun argList(): List<Expr> {
+        val args = ArrayList<Expr>()
 
+        do {
+            args += expr()
+        } while (match(COMMA))
+
+        consume(CLOSE_PAREN, "Expected ')' after arguments")
+
+        return args
     }
 
     private fun primary(): Expr {
+        return when {
+            match(TRUE) -> Expr.Literal(true)
+            match(FALSE) -> Expr.Literal(false)
+            match(NIL) -> Expr.Literal(null)
+            match(NUMBER) || match(STRING) -> Expr.Literal(previous().literal)
 
+            match(IDENTIFIER) -> Expr.Variable(previous())
+            match(OPEN_PAREN) -> {
+                val expr = expr()
+                consume(CLOSE_PAREN, "Expected '(' after expression")
+                Expr.Grouping(expr)
+            }
+
+            match(OPEN_BRACE) -> if (!match(CLOSE_BRACE)) {
+                Expr.Dictionary(dictItems())
+            } else {
+                Expr.Dictionary(emptyList())
+            }
+
+            match(OPEN_BRACKET) -> if (!match(CLOSE_BRACKET)) {
+                Expr.CrispyList(listItems())
+            } else {
+                Expr.CrispyList(emptyList())
+            }
+
+            else -> throw error(peek(), "Expected expression")
+        }
+    }
+
+    private fun listItems(): List<Expr> {
+        val items = ArrayList<Expr>()
+
+        do {
+            items += expr()
+        } while (match(COMMA))
+
+        consume(CLOSE_BRACKET, "Expected ']' after arguments")
+
+        return items
+    }
+
+    private fun dictItems(): List<Pair<Expr, Expr>> {
+        val items = ArrayList<Pair<Expr, Expr>>()
+
+        do {
+            val key = expr()
+            consume(COLON, "Expected ':' between key and value in dictionary")
+            val value = expr()
+            items += key to value
+        } while (match(COMMA))
+
+        consume(CLOSE_BRACE, "Expected '}' after dictionary literal")
+
+        return items
     }
 }
