@@ -222,7 +222,7 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
 
         return when (op.type) {
             MINUS ->
-                if (left is Double && right is Double) left + right
+                if (left is Double && right is Double) left - right
                 else throw RuntimeError(op, "Both operands must be numbers")
             STAR ->
                 if (left is Double && right is Double) left * right
@@ -357,7 +357,7 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
             environment.get(variableExpr.name)
 
     override fun visitGrouping(groupingExpr: Expr.Grouping): Any? =
-            evaluate(groupingExpr)
+            evaluate(groupingExpr.expr)
 
     override fun visitDictionary(dictionaryExpr: Expr.Dictionary): Any? {
         val dict = dictionaryExpr.pairs.map {
