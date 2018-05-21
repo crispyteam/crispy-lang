@@ -14,11 +14,9 @@ import com.github.crispyteam.tokenize.TokenType.*
 class RuntimeError(val token: Token, msg: String) :
         RuntimeException(msg)
 
-class Return(val value: Any?) :
-        RuntimeException()
-
-class Break : RuntimeException()
-class Continue : RuntimeException()
+class Return(val value: Any?) : RuntimeException(null, null, false, false)
+class Break : RuntimeException(null, null, false, false)
+class Continue : RuntimeException(null, null, false, false)
 
 internal fun stringify(value: Variable): String {
     return when (value.value) {

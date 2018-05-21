@@ -8,7 +8,7 @@ class Environment(private val outer: Environment?) {
     class RedefinitionError : RuntimeException()
     class AssignmentError(val token: Token, msg: String) : RuntimeException(msg)
 
-    fun get(key: Token): Any? {
+    fun get(key: Token): Variable? {
         val value = values[key.lexeme]
 
         if (value == null) {
@@ -39,6 +39,11 @@ class Environment(private val outer: Environment?) {
             throw AssignmentError(key, "Cannot reassing value '$key'")
         }
 
-        throw AssignmentError(key, "Undefined variable '${key.lexeme}'")
+        if (outer != null) {
+            outer.assign(key, value)
+        } else {
+            throw AssignmentError(key, "Undefined variable '${key.lexeme}'")
+        }
     }
+
 }
