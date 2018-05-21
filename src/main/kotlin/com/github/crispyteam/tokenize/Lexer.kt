@@ -1,5 +1,7 @@
 package com.github.crispyteam.tokenize
 
+import com.github.crispyteam.inRepl
+import com.github.crispyteam.replLine
 import com.github.crispyteam.reportError
 import com.github.crispyteam.tokenize.TokenType.*
 
@@ -31,7 +33,7 @@ class Lexer(private val source: String) {
     // The position at the start of the current Token
     private var start = 0
     // The current line in the source code
-    private var line = 0
+    private var line = 1
 
     /**
      * Performs lexical analysis on the source code and returns
@@ -42,7 +44,7 @@ class Lexer(private val source: String) {
     fun lex(): List<Token> {
         tokens.clear()
         position = 0
-        line = 1
+        line = if (inRepl) replLine else 1
 
         while (!atEnd()) {
             start = position
@@ -54,7 +56,7 @@ class Lexer(private val source: String) {
                 type = EOF,
                 line = line,
                 startPos = source.length - 1,
-                endPos = source.length - 1,
+                lexeme = "",
                 literal = null
         )
 
@@ -90,14 +92,8 @@ class Lexer(private val source: String) {
      * Adds a Token with the supplied literal to the List.
      */
     private fun addToken(type: TokenType, literal: Any?) {
-        tokens += Token(type, line, start, position, literal)
+        tokens += Token(type, line, start, source.substring(start, position), literal)
     }
-
-    /**
-     * Returns the source code as a List of lines.
-     * Used for error messages.
-     */
-    private fun lines() = source.lines()
 
     /**
      * The current char.
@@ -214,7 +210,7 @@ class Lexer(private val source: String) {
         when (current) {
             ' ', '\r', '\t' -> {
             }
-            '\n' -> ++line
+            '\n' -> if (!inRepl) ++line
             '(' -> addToken(OPEN_PAREN)
             ')' -> addToken(CLOSE_PAREN)
             '{' -> addToken(OPEN_BRACE)

@@ -1,5 +1,6 @@
 package com.github.crispyteam.interpret
 
+import com.github.crispyteam.inRepl
 import com.github.crispyteam.parse.Expr
 import com.github.crispyteam.parse.ParseError
 import com.github.crispyteam.parse.Parser
@@ -45,7 +46,11 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     }
 
     fun interpret(sourceCode: String) {
-        this.sourceCode = sourceCode
+        this.sourceCode = if (inRepl)
+            this.sourceCode + System.lineSeparator() + sourceCode
+        else
+            sourceCode
+
         val parser = Parser(Lexer(sourceCode))
 
         try {
@@ -64,9 +69,6 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     private fun execute(stmt: Stmt) {
         stmt.accept(this)
     }
-
-    private fun lexeme(token: Token): String =
-            sourceCode.substring(token.startPos, token.endPos)
 
     private fun isTruthful(obj: Any?): Boolean {
         if (obj == null) return false
@@ -144,10 +146,28 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     override fun visitAssignment(assignmentStmt: Stmt.Assignment) {
         val value = evaluate(assignmentStmt.value)
         try {
-            environment.assign(lexeme(assignmentStmt.name), value)
+            environment.assign(assignmentStmt.name, value)
         } catch (err: Environment.AssignmentError) {
             throw RuntimeError(assignmentStmt.name, err.message ?: "")
         }
+    }
+
+    override fun visitSetBraces(setbracesStmt: Stmt.SetBraces) {
+        val variable = evaluate(setbracesStmt.obj) as? Variable
+                ?: throw RuntimeError(setbracesStmt.token, "Invalid syntax")
+
+        val obj = variable.literal() as? MutableMap<String, Any?>
+                ?: throw RuntimeError(setbracesStmt.token, "Invalid target for set operation")
+
+        val key = evaluate(setbracesStmt.key) as? String
+                ?: throw RuntimeError(setbracesStmt.token, "Can only use strings as index in [...] syntax")
+        var value = evaluate(setbracesStmt.value)
+
+        if (value is CrispyFunction) {
+            value = value.bind(obj)
+        }
+
+        obj[key] = Variable(value, true)
     }
 
     override fun visitSet(setStmt: Stmt.Set) {
@@ -163,17 +183,21 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
             value = value.bind(obj)
         }
 
-        obj[lexeme(setStmt.key)] = Variable(value, true)
+        obj[setStmt.key.lexeme] = Variable(value, true)
     }
 
     override fun visitIncrement(incrementStmt: Stmt.Increment) {
-        val key = lexeme(incrementStmt.variable)
+        val key = incrementStmt.variable
         val value = environment.get(incrementStmt.variable)
-        environment.assign(key, (value as Variable).value as Double + 1) // TODO check type
+        try {
+            environment.assign(key, (value as Variable).value as Double + 1) // TODO check type
+        } catch (err: Environment.AssignmentError) {
+            throw RuntimeError(err.token, err.message ?: "Assignment Error")
+        }
     }
 
     override fun visitDecrement(decrementStmt: Stmt.Decrement) {
-        val key = lexeme(decrementStmt.variable)
+        val key = decrementStmt.variable
         val value = environment.get(decrementStmt.variable)
         environment.assign(key, (value as Variable).value as Double - 1) // TODO check type
     }
@@ -243,7 +267,15 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
                 is String ->
                     if (right is String) left != right
                     else throw RuntimeError(op, "Second operand must be a String")
-                else -> throw RuntimeError(op, "Invalid first operand")
+                is Map<*, *> -> when (right) {
+                    is Map<*, *> -> left == right
+                    null -> true
+                    else -> throw RuntimeError(op, "Invalid second operand")
+                }
+                else -> when (right) {
+                    null -> left != null
+                    else -> throw RuntimeError(op, "Invalid first operand")
+                }
             }
             else -> throw  RuntimeError(op, "Invalid first operand for binary expression")
         }
@@ -267,10 +299,10 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
             CrispyFunction(this.environment, lambdaExpr)
 
     override fun visitCall(callExpr: Expr.Call): Any? {
-        val pair = evaluate(callExpr.callee) as? Variable
+        val variable = evaluate(callExpr.callee) as? Variable
                 ?: throw RuntimeError(callExpr.paren, "Error while resolving function name")
 
-        val callee = pair.value as? CrispyCallable
+        val callee = variable.value as? CrispyCallable
                 ?: throw RuntimeError(callExpr.paren, "Can only call functions")
 
         val args = callExpr.arguments
@@ -298,13 +330,26 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
 
     override fun visitAccess(accessExpr: Expr.Access): Any? {
         val variable = (evaluate(accessExpr.obj) as? Variable)
-                ?: throw ParseError(accessExpr.brace, "Invalid syntax")
-
-        val obj = variable.literal() as? Map<*, *>
-                ?: throw RuntimeError(accessExpr.brace, "Can only use '[...]' syntax on Dictionaries or lists")
+                ?: throw RuntimeError(accessExpr.brace, "Invalid syntax")
 
         val key = evaluate(accessExpr.key)
-        return obj[key]
+        val obj = variable.literal()
+
+        return when (obj) {
+            is Map<*, *> -> obj[key]
+            is List<*> -> when (key) {
+                is Double -> obj[key.toInt()]
+                is Variable -> {
+                    val k = key.literal()
+                    when (k) {
+                        is Double -> obj[k.toInt()]
+                        else -> throw RuntimeError(accessExpr.brace, "Can only use natural numbers as list index")
+                    }
+                }
+                else -> throw RuntimeError(accessExpr.brace, "Can only use natural numbers as list index")
+            }
+            else -> throw RuntimeError(accessExpr.brace, "Can only use '[...]' syntax on Dictionaries or lists")
+        }
     }
 
     override fun visitLiteral(literalExpr: Expr.Literal) =
@@ -331,7 +376,7 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
         return dict
     }
 
-    override fun visitCrispyList(crispylistExpr: Expr.CrispyList): List<Any> {
-        return crispylistExpr.items
+    override fun visitCrispyList(crispylistExpr: Expr.CrispyList): List<Any?> {
+        return crispylistExpr.items.map { evaluate(it) }.toList()
     }
 }

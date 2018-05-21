@@ -12,7 +12,8 @@ private const val prompt = ">>> "
 
 private var hadError = false
 private val interpreter = Interpreter()
-private var inRepl = false
+internal var inRepl = false
+internal var replLine = 1
 
 fun main(args: Array<String>) =
         when {
@@ -27,9 +28,15 @@ fun reportError(line: Int, msg: String) {
 
 fun reportError(token: Token, msg: String) {
     System.err.println("[Error line: ${token.line}]: $msg. ${System.lineSeparator()}")
+
     val offset = " ".repeat(4)
-    System.err.println(offset + interpreter.sourceLines()[token.line - 1]) // TODO arrow
-    System.err.println("$offset${" ".repeat(token.startPos)}^")
+    val lineNum = if (inRepl) 0 else 1
+    val lines = interpreter.sourceLines()
+
+    val linesBefore = lines.subList(0, lineNum).map { it.length }.sum() + if (inRepl) 0 else 1
+
+    System.err.println(offset + lines[token.line - lineNum])
+    System.err.println("$offset${" ".repeat(token.startPos - linesBefore)}^")
 }
 
 fun runFile(fileName: String) {
@@ -52,9 +59,10 @@ fun runInteractive() {
         try {
             val line = scanner.nextLine()
             run(line)
+            replLine++
         } catch (e: RuntimeException) {
             // scanner throws an annoying exception when repl is quit with EOF char
-            println()
+            println(e.message) // TODO remove when bugfree
             exitProcess(0)
         }
 

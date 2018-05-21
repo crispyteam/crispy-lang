@@ -30,6 +30,6 @@ data class Token(
         val type: TokenType,
         val line: Int,
         val startPos: Int,
-        val endPos: Int,
+        val lexeme: String,
         val literal: Any?
 )

@@ -14,6 +14,7 @@ fun main(args: Array<String>) {
             "VarDecl        = name: Token, value: Expr?",
             "While          = condition: Expr, block: Stmt",
             "Set            = obj: Expr, key: Token, token: Token, value: Expr",
+            "SetBraces      = obj: Expr, key: Expr, token: Token, value: Expr",
             "Assignment     = name: Token, value: Expr",
             "Increment      = variable: Token",
             "Decrement      = variable: Token"

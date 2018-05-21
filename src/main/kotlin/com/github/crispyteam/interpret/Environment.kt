@@ -6,16 +6,16 @@ class Environment(private val outer: Environment?) {
     private val values = HashMap<String, Variable>()
 
     class RedefinitionError : RuntimeException()
-    class AssignmentError(msg: String) : RuntimeException(msg)
+    class AssignmentError(val token: Token, msg: String) : RuntimeException(msg)
 
     fun get(key: Token): Any? {
-        val value = values[key.literal]
+        val value = values[key.lexeme]
 
         if (value == null) {
             if (outer != null) {
                 return outer.get(key)
             }
-            throw RuntimeError(key, "Undefined variable '${key.literal}'")
+            throw RuntimeError(key, "Undefined variable '${key.lexeme}'")
         }
 
         return value
@@ -29,16 +29,16 @@ class Environment(private val outer: Environment?) {
         }
     }
 
-    fun assign(key: String, value: Any?) {
-        val result = values[key]
+    fun assign(key: Token, value: Any?) {
+        val result = values[key.lexeme]
         if (result != null) {
             if (result.assignable) {
-                values[key] = Variable(value, true)
+                values[key.lexeme] = Variable(value, true)
                 return
             }
-            throw AssignmentError("Cannot reassing value '$key'")
+            throw AssignmentError(key, "Cannot reassing value '$key'")
         }
 
-        throw AssignmentError("Undefined variable '$key'")
+        throw AssignmentError(key, "Undefined variable '${key.lexeme}'")
     }
 }

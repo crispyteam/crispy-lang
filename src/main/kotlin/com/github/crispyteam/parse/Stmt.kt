@@ -65,6 +65,12 @@ abstract class Stmt {
          }
      }
 
+    data class SetBraces(val  obj: Expr, val  key: Expr, val  token: Token, val  value: Expr): Stmt() {
+         override fun <T> accept(visitor: Visitor<T>): T {
+              return visitor.visitSetBraces(this)
+         }
+     }
+
     data class Assignment(val  name: Token, val  value: Expr): Stmt() {
          override fun <T> accept(visitor: Visitor<T>): T {
               return visitor.visitAssignment(this)
@@ -94,6 +100,7 @@ abstract class Stmt {
         fun visitVarDecl(vardeclStmt: VarDecl): T
         fun visitWhile(whileStmt: While): T
         fun visitSet(setStmt: Set): T
+        fun visitSetBraces(setbracesStmt: SetBraces): T
         fun visitAssignment(assignmentStmt: Assignment): T
         fun visitIncrement(incrementStmt: Increment): T
         fun visitDecrement(decrementStmt: Decrement): T

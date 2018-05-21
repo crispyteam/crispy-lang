@@ -20,9 +20,9 @@ fun traverse(node) {
     if node.left != nil {
         traverse(node.left);
     }
-        
+
     println(node.value);
-    
+
     if node.right != nil {
         traverse(node.right);
     }

@@ -8,7 +8,7 @@ interface CrispyCallable {
 }
 
 class CrispyFunction(
-        private val closure: Environment,
+        private var closure: Environment,
         private val declaration: Expr.Lambda
 ) : CrispyCallable {
     init {
@@ -27,8 +27,9 @@ class CrispyFunction(
             declaration.parameters.size
 
     override fun call(interpreter: Interpreter, args: List<Variable>): Any? {
+        closure = Environment(closure)
         declaration.parameters.withIndex().forEach { (i, it) ->
-            closure.assign(it.literal.toString(), args[i])
+            closure.define(it.literal.toString(), args[i], false)
         }
 
         try {

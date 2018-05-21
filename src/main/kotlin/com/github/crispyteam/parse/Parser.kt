@@ -251,6 +251,7 @@ class Parser(private val lexer: Lexer) {
             match(EQUALS) -> when (result) {
                 is Expr.Variable -> Stmt.Assignment(result.name, expr())
                 is Expr.Get -> Stmt.Set(result.obj, result.key, previous(), expr())
+                is Expr.Access -> Stmt.SetBraces(result.obj, result.key, previous(), expr())
                 else -> throw ParseError(previous(), "Invalid assignment target")
             }
         // TODO make safe
