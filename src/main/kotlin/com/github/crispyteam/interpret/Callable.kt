@@ -41,7 +41,7 @@ class CrispyFunction(
     }
 
     override fun toString(): String {
-        return "<function (${declaration.parameters.joinToString(", ")})>"
+        return "<function (${declaration.parameters.joinToString(", ") { it.literal.toString() }})>"
     }
 
 

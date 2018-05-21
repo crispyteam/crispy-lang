@@ -1,12 +1,13 @@
 package com.github.crispyteam.parse
 
+import com.github.crispyteam.reportError
 import com.github.crispyteam.tokenize.Lexer
 import com.github.crispyteam.tokenize.Token
 import com.github.crispyteam.tokenize.TokenType
 import com.github.crispyteam.tokenize.TokenType.*
 
-class ParseError(token: Token, msg: String) :
-        RuntimeException("[Error line: ${token.line}]: $msg")
+class ParseError(val token: Token, msg: String) :
+        RuntimeException(msg)
 
 class Parser(private val lexer: Lexer) {
     private lateinit var tokens: List<Token>
@@ -17,10 +18,32 @@ class Parser(private val lexer: Lexer) {
         val statements = ArrayList<Stmt>()
 
         while (!atEnd()) {
-            statements += stmt()
+            try {
+                statements += stmt()
+            } catch (err: ParseError) {
+                reportError(err.token, err.message ?: "Error while Parsing")
+                synchronize()
+            }
         }
 
         return statements
+    }
+
+    private fun synchronize() {
+        advance()
+
+        while (!atEnd()) {
+            if (previous().type == SEMICOLON) return
+
+            val synced = when (peek().type) {
+                VAL, VAR, IF, WHILE, RETURN, BREAK, CONTINUE, FOR -> true
+                else -> false
+            }
+
+            if (synced) return
+
+            advance()
+        }
     }
 
     private fun error(token: Token, message: String): ParseError {

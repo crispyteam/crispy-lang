@@ -4,13 +4,14 @@ import com.github.crispyteam.parse.Expr
 import com.github.crispyteam.parse.ParseError
 import com.github.crispyteam.parse.Parser
 import com.github.crispyteam.parse.Stmt
+import com.github.crispyteam.reportError
 import com.github.crispyteam.tokenize.Lexer
 import com.github.crispyteam.tokenize.Token
 import com.github.crispyteam.tokenize.TokenType.*
 
 
-class RuntimeError(token: Token, msg: String) :
-        RuntimeException("[Error line: ${token.line}]: $msg")
+class RuntimeError(val token: Token, msg: String) :
+        RuntimeException(msg)
 
 class Return(val value: Any?) :
         RuntimeException()
@@ -46,8 +47,16 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     fun interpret(sourceCode: String) {
         this.sourceCode = sourceCode
         val parser = Parser(Lexer(sourceCode))
-        parser.parse().forEach { execute(it) }
+
+        try {
+            parser.parse().forEach { execute(it) }
+        } catch (err: RuntimeError) {
+            reportError(err.token, err.message ?: "Runtime Error")
+        }
     }
+
+    fun sourceLines(): List<String> =
+            sourceCode.lines()
 
     private fun evaluate(expr: Expr): Any? =
             expr.accept(this)
