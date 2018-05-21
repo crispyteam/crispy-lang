@@ -6,6 +6,7 @@ import com.github.crispyteam.parse.Parser
 import com.github.crispyteam.parse.Stmt
 import com.github.crispyteam.tokenize.Lexer
 import com.github.crispyteam.tokenize.Token
+import com.github.crispyteam.tokenize.TokenType.*
 
 
 class RuntimeError(token: Token, msg: String) :
@@ -13,6 +14,9 @@ class RuntimeError(token: Token, msg: String) :
 
 class Return(val value: Any?) :
         RuntimeException()
+
+class Break : RuntimeException()
+class Continue : RuntimeException()
 
 internal fun stringify(value: Variable): String {
     return when (value.value) {
@@ -86,11 +90,11 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     }
 
     override fun visitBreak(breakStmt: Stmt.Break) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        throw Break()
     }
 
     override fun visitContinue(continueStmt: Stmt.Continue) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        throw Continue()
     }
 
     override fun visitBlock(blockStmt: Stmt.Block) {
@@ -166,7 +170,15 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     }
 
     override fun visitWhile(whileStmt: Stmt.While) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        while (isTruthful(evaluate(whileStmt.condition))) {
+            try {
+                execute(whileStmt.block)
+            } catch (cont: Continue) {
+                continue
+            } catch (brk: Break) {
+                break
+            }
+        }
     }
 
     override fun visitBinary(binaryExpr: Expr.Binary): Any? {
@@ -175,18 +187,71 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
         var right = evaluate(binaryExpr.right)
         if (right is Variable) right = right.literal()
 
-        return when (left) {
-            is Double -> when (right) {
-                is Double -> left + right
-                else -> throw RuntimeError(binaryExpr.operator, "Right expression must evaluate to a number")
+        val op = binaryExpr.operator
+
+        return when (op.type) {
+            MINUS ->
+                if (left is Double && right is Double) left + right
+                else throw RuntimeError(op, "Both operands must be numbers")
+            STAR ->
+                if (left is Double && right is Double) left * right
+                else throw RuntimeError(op, "Both operands must be numbers")
+            SLASH ->
+                if (left is Double && right is Double) left / right
+                else throw RuntimeError(op, "Both operands must be numbers")
+            SMALLER ->
+                if (left is Double && right is Double) left < right
+                else throw RuntimeError(op, "Both operands must be numbers")
+            GREATER ->
+                if (left is Double && right is Double) left > right
+                else throw RuntimeError(op, "Both operands must be numbers")
+            SMALLER_EQUALS ->
+                if (left is Double && right is Double) left <= right
+                else throw RuntimeError(op, "Both operands must be numbers")
+            GREATER_EQUALS ->
+                if (left is Double && right is Double) left >= right
+                else throw RuntimeError(op, "Both operands must be numbers")
+            PLUS -> when (left) {
+                is Double ->
+                    if (right is Double) left + right
+                    else throw RuntimeError(op, "Second operator must be a number")
+                is String -> left + stringify(Variable(right, true))
+                else -> throw RuntimeError(op, "Invalid first operand")
             }
-            is String -> left + stringify(Variable(right, true))
-            else -> throw RuntimeError(binaryExpr.operator, "Left expression must evaluate to a string or a number")
+            EQUALS_EQUALS -> when (left) {
+                is Double ->
+                    if (right is Double) left == right
+                    else throw RuntimeError(op, "Second operand must be a number")
+                is String ->
+                    if (right is String) left == right
+                    else throw RuntimeError(op, "Second operand must be a String")
+                else -> throw RuntimeError(op, "Invalid first operand")
+            }
+            BANG_EQUALS -> when (left) {
+                is Double ->
+                    if (right is Double) left != right
+                    else throw RuntimeError(op, "Second operand must be a number")
+                is String ->
+                    if (right is String) left != right
+                    else throw RuntimeError(op, "Second operand must be a String")
+                else -> throw RuntimeError(op, "Invalid first operand")
+            }
+            else -> throw  RuntimeError(op, "Invalid first operand for binary expression")
         }
     }
 
     override fun visitUnary(unaryExpr: Expr.Unary): Any? {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val result = evaluate(unaryExpr.expr)
+
+        return when (unaryExpr.operator.type) {
+            MINUS -> {
+                result as? Double
+                        ?: throw RuntimeError(unaryExpr.operator, "'-' operator can only be used on numeric values")
+                -result
+            }
+            BANG -> !isTruthful(result)
+            else -> throw RuntimeError(unaryExpr.operator, "Invalid operand for operator")
+        }
     }
 
     override fun visitLambda(lambdaExpr: Expr.Lambda): Any? =
@@ -223,13 +288,13 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     }
 
     override fun visitAccess(accessExpr: Expr.Access): Any? {
-        val variable = (evaluate(accessExpr.obj) as? Variable) ?: throw ParseError(accessExpr.brace, "Invalid syntax")
+        val variable = (evaluate(accessExpr.obj) as? Variable)
+                ?: throw ParseError(accessExpr.brace, "Invalid syntax")
 
         val obj = variable.literal() as? Map<*, *>
                 ?: throw RuntimeError(accessExpr.brace, "Can only use '[...]' syntax on Dictionaries or lists")
 
         val key = evaluate(accessExpr.key)
-
         return obj[key]
     }
 
@@ -239,9 +304,8 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     override fun visitVariable(variableExpr: Expr.Variable): Any? =
             environment.get(variableExpr.name)
 
-    override fun visitGrouping(groupingExpr: Expr.Grouping): Any? {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun visitGrouping(groupingExpr: Expr.Grouping): Any? =
+            evaluate(groupingExpr)
 
     override fun visitDictionary(dictionaryExpr: Expr.Dictionary): Any? {
         val dict = dictionaryExpr.pairs.map {
