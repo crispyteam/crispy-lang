@@ -20,7 +20,8 @@ enum class TokenType {
 
     /* Keywords */
     FUN,
-    VAL, VAR, CONTINUE, BREAK, IF, ELSE, FOR, WHILE, IMPORT, IN, RETURN, TRUE, FALSE, NIL, AND, OR,
+    VAL, VAR, CONTINUE, BREAK, IF, ELSE, FOR,
+    WHILE, IMPORT, IN, RETURN, TRUE, FALSE, NIL, AND, OR,
 
     EOF
 }

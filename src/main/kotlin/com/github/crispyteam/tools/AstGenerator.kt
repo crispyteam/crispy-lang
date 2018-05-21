@@ -5,7 +5,6 @@ import java.io.PrintWriter
 fun main(args: Array<String>) {
     defineAst("src/main/kotlin/com/github/crispyteam/parse", "Stmt", listOf(
             "Expression     = expr: Expr",
-            "IncDec         = operator: Token, expr: Expr",
             "Return         = keyword: Token, expr: Expr?",
             "Break          = keyword: Token",
             "Continue       = keyword: Token",
@@ -13,7 +12,11 @@ fun main(args: Array<String>) {
             "If             = condition: Expr, thenBlock: Block, elseBlock: Stmt?",
             "ValDecl        = name: Token, value: Expr",
             "VarDecl        = name: Token, value: Expr?",
-            "While          = condition: Expr, block: Stmt"
+            "While          = condition: Expr, block: Stmt",
+            "Set            = obj: Expr, key: Token, token: Token, value: Expr",
+            "Assignment     = name: Token, value: Expr",
+            "Increment      = variable: Token",
+            "Decrement      = variable: Token"
     ))
 
     defineAst("src/main/kotlin/com/github/crispyteam/parse", "Expr", listOf(
@@ -21,15 +24,15 @@ fun main(args: Array<String>) {
             "Unary      = operator: Token, expr: Expr",
             "Lambda     = parameters: List<Token>, body: Stmt",
             "Call       = callee: Expr, arguments: List<Expr>, paren: Token",
-            "Get        = obj: Expr, key: Expr, brace: Token",
+            // identifier.identifier
+            "Get        = obj: Expr, key: Token, token: Token",
+            // identifier[expr]
+            "Access     = obj: Expr, key: Expr, brace: Token",
             "Literal    = value: Any?",
             "Variable   = name: Token",
             "Grouping   = expr: Expr",
             "Dictionary = pairs: List<Pair<Expr; Expr>>",
-            "CrispyList = items: List<Expr>",
-            "Assignment = name: Expr, value: Expr",
-            "Increment  = variable: Expr",
-            "Decrement  = variable: Expr"
+            "CrispyList = items: List<Expr>"
     ))
 }
 

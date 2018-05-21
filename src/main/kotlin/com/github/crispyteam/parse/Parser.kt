@@ -5,14 +5,14 @@ import com.github.crispyteam.tokenize.Token
 import com.github.crispyteam.tokenize.TokenType
 import com.github.crispyteam.tokenize.TokenType.*
 
-class Parser {
-    class ParseError(token: Token, msg: String) :
-            RuntimeException("[Error line: ${token.line}]: $msg")
+class ParseError(token: Token, msg: String) :
+        RuntimeException("[Error line: ${token.line}]: $msg")
 
+class Parser(private val lexer: Lexer) {
     private lateinit var tokens: List<Token>
     private var position = 0
 
-    fun parse(lexer: Lexer): List<Stmt> {
+    fun parse(): List<Stmt> {
         tokens = lexer.lex()
         val statements = ArrayList<Stmt>()
 
@@ -81,23 +81,31 @@ class Parser {
             when {
                 match(VAL) -> valDecl()
                 match(VAR) -> varDecl()
-                else -> exprStmt()
+                else -> {
+                    val stmt = assignment()
+                    consume(SEMICOLON, "Expected ';' after statement")
+                    stmt
+                }
             }
 
-    private fun exprStmt(): Stmt {
+    private fun returnStmt(): Stmt.Return {
+        val keyword = previous()
         val expr = expr()
-        consume(SEMICOLON, "Expected ';' after statement")
-        return Stmt.Expression(expr)
+        consume(SEMICOLON, "Expected ';' after return value")
+        return Stmt.Return(keyword, expr)
     }
 
-    private fun returnStmt(): Stmt.Return =
-            Stmt.Return(previous(), expr())
+    private fun continueStmt(): Stmt.Continue {
+        val keyword = previous()
+        consume(SEMICOLON, "Expected ';' after continue")
+        return Stmt.Continue(keyword)
+    }
 
-    private fun continueStmt(): Stmt.Continue =
-            Stmt.Continue(previous())
-
-    private fun breakStmt(): Stmt.Break =
-            Stmt.Break(previous())
+    private fun breakStmt(): Stmt.Break {
+        val keyword = previous()
+        consume(SEMICOLON, "Expected ';' after break")
+        return Stmt.Break(keyword)
+    }
 
     private fun block(): Stmt.Block {
         consume(OPEN_BRACE, "Expected '{' at beginning of block")
@@ -137,8 +145,7 @@ class Parser {
     private fun forStmt(): Stmt {
         val initializer: Stmt? = when {
             match(SEMICOLON) -> null
-            match(VAR) -> varDecl()
-            else -> exprStmt()
+            else -> simpleStmt()
         }
 
         var condition: Expr? = when {
@@ -147,16 +154,16 @@ class Parser {
         }
         consume(SEMICOLON, "Expected ';' after loop condition")
 
-        val increment: Expr? = when {
+        val increment: Stmt? = when {
             check(OPEN_BRACE) -> null
-            else -> expr()
+            else -> assignment()
         }
 
         var body = block() as Stmt
 
         // add increment after block
         if (increment != null) {
-            body = Stmt.Block(listOf(body, Stmt.Expression(increment)))
+            body = Stmt.Block(listOf(body, increment))
         }
 
         condition = condition ?: Expr.Literal(true)
@@ -214,22 +221,27 @@ class Parser {
         return Stmt.VarDecl(name, value)
     }
 
+    private fun assignment(): Stmt {
+        val result = expr()
+
+        return when {
+            match(EQUALS) -> when (result) {
+                is Expr.Variable -> Stmt.Assignment(result.name, expr())
+                is Expr.Get -> Stmt.Set(result.obj, result.key, previous(), expr())
+                else -> throw ParseError(previous(), "Invalid assignment target")
+            }
+        // TODO make safe
+            match(PLUS_PLUS) -> Stmt.Increment((result as Expr.Variable).name)
+            match(MINUS_MINUS) -> Stmt.Decrement((result as Expr.Variable).name)
+            else -> Stmt.Expression(result)
+        }
+    }
+
     private fun expr(): Expr =
             when {
                 match(FUN) -> lambda()
-                else -> assignment()
+                else -> logicOr()
             }
-
-    private fun assignment(): Expr {
-        val result = logicOr()
-
-        return when {
-            match(EQUALS) -> Expr.Assignment(result, assignment())
-            match(PLUS_PLUS) -> Expr.Increment(result)
-            match(MINUS_MINUS) -> Expr.Decrement(result)
-            else -> result
-        }
-    }
 
     private fun logicOr(): Expr {
         var result = logicAnd()
@@ -316,12 +328,12 @@ class Parser {
                     val bracket = previous()
                     val expr = expr()
                     consume(CLOSE_BRACKET, "Expected ']' after get expression")
-                    Expr.Get(primary, expr, bracket)
+                    Expr.Access(primary, expr, bracket)
                 }
                 DOT -> {
                     val dot = previous()
                     val ident = consume(IDENTIFIER, "Expected identifer after '.'")
-                    Expr.Get(primary, Expr.Literal(ident.literal), dot)
+                    Expr.Get(primary, ident, dot)
                 }
                 else -> throw error(previous(), "Unexpected Token")
             }

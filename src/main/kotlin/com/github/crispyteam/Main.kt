@@ -1,14 +1,14 @@
 package com.github.crispyteam
 
-import com.github.crispyteam.parse.Parser
-import com.github.crispyteam.tokenize.Lexer
+import com.github.crispyteam.interpret.Interpreter
 import com.github.crispyteam.tokenize.Token
 import java.io.File
 import java.nio.charset.Charset
 import java.util.*
 
 const val version = "0.1"
-var hadError = false
+private var hadError = false
+private lateinit var replInterpreter: Interpreter
 
 fun main(args: Array<String>) =
         when {
@@ -39,6 +39,7 @@ fun runInteractive() {
     println("Klox interactive shell version $version")
 
     val scanner = Scanner(System.`in`)
+    replInterpreter = Interpreter()
 
     while (true) {
         print(">>> ")
@@ -48,8 +49,5 @@ fun runInteractive() {
 }
 
 fun run(program: String) {
-    val lexer = Lexer(program)
-    val parser = Parser()
-
-    println(parser.parse(lexer))
+    replInterpreter.interpret(program)
 }

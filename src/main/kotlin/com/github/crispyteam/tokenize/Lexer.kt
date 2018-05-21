@@ -65,7 +65,7 @@ class Lexer(private val source: String) {
      * Checks if the current position exceeds
      * the length of the source code.
      */
-    private fun atEnd() =
+    private fun atEnd(): Boolean =
             position >= source.length
 
     /**
@@ -73,7 +73,7 @@ class Lexer(private val source: String) {
      *
      * @return The char at position, before incrementing or \0.
      */
-    private fun advance() =
+    private fun advance(): Char =
             if (!atEnd())
                 source[position++]
             else
@@ -82,8 +82,9 @@ class Lexer(private val source: String) {
     /**
      * Adds a Token without a literal to the List.
      */
-    private fun addToken(type: TokenType) =
-            addToken(type, null)
+    private fun addToken(type: TokenType) {
+        addToken(type, null)
+    }
 
     /**
      * Adds a Token with the supplied literal to the List.
