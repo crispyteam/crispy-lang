@@ -1,0 +1,9 @@
+// Assignment on RHS of variable.
+var a = "before";
+
+print(a); // expect: before
+
+var b = a = "after";
+
+print(a); // expect: after
+print(b); // expect after
