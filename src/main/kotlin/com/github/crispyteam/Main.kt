@@ -8,12 +8,16 @@ import java.util.*
 import kotlin.system.exitProcess
 
 const val version = "0.1"
-private const val prompt = ">>> "
-
 private var hadError = false
+
 private val interpreter = Interpreter()
 internal var inRepl = false
 internal var replLine = 1
+private var prompt = ">>> "
+
+private var openParen = 0
+private var openBrace = 0
+private var openBracket = 0
 
 fun main(args: Array<String>) =
         when {
@@ -53,12 +57,21 @@ fun runInteractive() {
     println("Crispy interactive shell version $version")
 
     val scanner = Scanner(System.`in`)
+    var code = ""
 
     while (true) {
         print(prompt)
         try {
             val line = scanner.nextLine()
-            run(line)
+            code += line
+            analyse(line)
+            prompt = if (openBrace == 0 && openBracket == 0 && openParen == 0) {
+                run(code)
+                code = ""
+                ">>> "
+            } else {
+                "... "
+            }
             replLine++
         } catch (e: RuntimeException) {
             // scanner throws an annoying exception when repl is quit with EOF char
@@ -68,6 +81,12 @@ fun runInteractive() {
 
         hadError = false
     }
+}
+
+private fun analyse(line: String) {
+    openParen += line.filter { it == '(' }.count() - line.filter { it == ')' }.count()
+    openBrace += line.filter { it == '{' }.count() - line.filter { it == '}' }.count()
+    openBracket += line.filter { it == '[' }.count() - line.filter { it == ']' }.count()
 }
 
 fun run(program: String) {
