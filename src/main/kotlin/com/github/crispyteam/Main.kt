@@ -35,7 +35,7 @@ fun reportError(token: Token, msg: String) {
 
     val offset = " ".repeat(4)
     val lines = interpreter.sourceLines()
-    val line = token.line - 1
+    val line = token.line - if (inRepl) 0 else 1
     val start = token.startPos - 1
 
     // Calculate position of token start in line
