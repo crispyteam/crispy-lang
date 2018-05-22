@@ -46,13 +46,23 @@ class Parser(private val lexer: Lexer) {
         }
     }
 
+    /**
+     * Generates a error message for syntactic errors
+     */
     private fun error(token: Token, message: String): ParseError {
         return ParseError(token, message)
     }
 
+    /**
+     * Returns the next token from the current position without consuming it
+     */
     private fun peek(): Token =
             tokens[position]
 
+    /**
+     * Consumes the current token and advances to the next one
+     * @return the current token
+     */
     private fun consume(type: TokenType, msg: String): Token {
         if (check(type)) {
             advance()
@@ -61,20 +71,40 @@ class Parser(private val lexer: Lexer) {
         throw error(peek(), msg)
     }
 
+    /**
+     * Checks if the parser is at the EOF
+     * @return true or false
+     */
     private fun atEnd(): Boolean =
             check(EOF)
 
+    /**
+     * Takes the previous token from the current position and returns it
+     * @return the previous token
+     */
     private fun previous(): Token =
             tokens[position - 1]
 
+    /**
+     * Increments the current position by 1 and returns the previous token
+     * @return the previous token
+     */
     private fun advance(): Token {
         if (!atEnd()) ++position
         return previous()
     }
 
+    /**
+     * Checks if the TokenTypes match
+     * @return true or false
+     */
     private fun match(vararg types: TokenType): Boolean =
             types.any { match(it) }
 
+    /**
+     * Checks if the TokenType matches an if so advances
+     * @return true or false
+     */
     private fun match(type: TokenType): Boolean {
         if (check(type)) {
             advance()
@@ -82,6 +112,7 @@ class Parser(private val lexer: Lexer) {
         }
         return false
     }
+
 
     private fun check(type: TokenType): Boolean =
             peek().type == type
