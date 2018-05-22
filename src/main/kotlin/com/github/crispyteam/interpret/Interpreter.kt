@@ -107,7 +107,7 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     }
 
     override fun visitBlock(blockStmt: Stmt.Block) {
-        executeBlock(Environment(this.environment), blockStmt)
+        blockStmt.statements.forEach { execute(it) }
     }
 
     override fun visitIf(ifStmt: Stmt.If) {
