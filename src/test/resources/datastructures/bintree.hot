@@ -3,15 +3,39 @@ val mk_node = fun value, left, right -> { return {"value": value, "left": left, 
 val tree = mk_node(2, mk_node(1, nil, nil), mk_node(3, nil, nil));
 
 val traverse = fun node, callback -> {
-    if node.left != nil {
-        traverse(node.left, callback);
-    }
+        if node.left != nil {
+            traverse(node.left, callback);
+        }
 
-    callback(node.value);
+        callback(node.value);
 
-    if node.right != nil {
-        traverse(node.right, callback);
+        if node.right != nil {
+            traverse(node.right, callback);
+        }
+};
+
+val insert = fun node, value -> {
+    if node == nil {
+        node = mk_node(value, nil, nil);
+    } else if node.value > value {
+        if node.left == nil {
+            node.left = mk_node(value, nil, nil);
+        } else {
+            insert(node.left, value);
+        }
+    } else {
+        if node.right == nil {
+            node.right = mk_node(value, nil, nil);
+        } else {
+            insert(node.right, value);
+        }
     }
 };
 
+traverse(tree, println);
+insert(tree, 0);
+insert(tree, 6);
+insert(tree, 4);
+insert(tree, 5);
+println("");
 traverse(tree, println);

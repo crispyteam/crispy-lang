@@ -260,7 +260,15 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
                 is String ->
                     if (right is String) left == right
                     else throw RuntimeError(op, "Second operand must be a String")
-                else -> throw RuntimeError(op, "Invalid first operand")
+                is Map<*, *> -> when (right) {
+                    is Map<*, *> -> left == right
+                    null -> false
+                    else -> throw RuntimeError(op, "Invalid second operand")
+                }
+                else -> when (right) {
+                    null -> left == null
+                    else -> throw RuntimeError(op, "Invalid first operand")
+                }
             }
             BANG_EQUALS -> when (left) {
                 is Double ->
@@ -270,7 +278,7 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
                     if (right is String) left != right
                     else throw RuntimeError(op, "Second operand must be a String")
                 is Map<*, *> -> when (right) {
-                    is Map<*, *> -> left == right
+                    is Map<*, *> -> left != right
                     null -> true
                     else -> throw RuntimeError(op, "Invalid second operand")
                 }
