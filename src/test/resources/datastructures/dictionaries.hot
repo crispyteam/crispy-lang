@@ -1,0 +1,24 @@
+val p = {
+    "name": "Hans",
+    "alter": 20
+};
+
+val p1 = {
+    "name": "Otto",
+    "alter": 50
+};
+
+val p2 = {
+    "name": "Felix",
+    "alter": 19
+};
+
+val personen = [p, p1, p2];
+
+for var i = 0; i < len(personen); i++ {
+    personen[i]["greet"] = fun -> println("Ich bin " + self.name);
+}
+
+for var i = 0; i < len(personen); i++ {
+    personen[i].greet();
+}

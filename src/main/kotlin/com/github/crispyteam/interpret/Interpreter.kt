@@ -50,16 +50,20 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
             sourceCode
 
         val parser = Parser(Lexer(sourceCode))
+        val statements = parser.parse()
 
         try {
-            parser.parse().forEach { execute(it) }
+            statements.forEach { execute(it) }
         } catch (err: RuntimeError) {
             reportError(err.token, err.message ?: "Runtime Error")
         }
     }
 
     fun sourceLines(): List<String> =
-            sourceCode.lines()
+            sourceCode.split("\n").toCollection(ArrayList())
+
+    fun sourceCode(): String =
+            sourceCode
 
     private fun evaluate(expr: Expr): Any? =
             expr.accept(this)
@@ -165,7 +169,7 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
             value = value.bind(obj)
         }
 
-        obj[key] = Variable(value, true)
+        obj[key] = value as? Variable ?: Variable(value, true)
     }
 
     override fun visitSet(setStmt: Stmt.Set) {
@@ -181,7 +185,7 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
             value = value.bind(obj)
         }
 
-        obj[setStmt.key.lexeme] = Variable(value, true)
+        obj[setStmt.key.lexeme] = value as? Variable ?: Variable(value, true)
     }
 
     override fun visitIncrement(incrementStmt: Stmt.Increment) {
@@ -246,7 +250,7 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
                 is Double ->
                     if (right is Double) left + right
                     else throw RuntimeError(op, "Second operator must be a number")
-                is String -> left + stringify(Variable(right, true))
+                is String -> left + stringify(right as? Variable ?: Variable(right, true))
                 else -> throw RuntimeError(op, "Invalid first operand")
             }
             EQUALS_EQUALS -> when (left) {
@@ -294,17 +298,20 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     }
 
     override fun visitLambda(lambdaExpr: Expr.Lambda): Any? =
-            CrispyFunction(this.environment, lambdaExpr)
+            CrispyFunction(Environment(this.environment), lambdaExpr)
 
     override fun visitCall(callExpr: Expr.Call): Any? {
         val variable = evaluate(callExpr.callee) as? Variable
                 ?: throw RuntimeError(callExpr.paren, "Error while resolving function name")
 
-        val callee = variable.value as? CrispyCallable
+        val callee = variable.literal() as? CrispyCallable
                 ?: throw RuntimeError(callExpr.paren, "Can only call functions")
 
         val args = callExpr.arguments
-                .map { Variable(evaluate(it), true) }
+                .map {
+                    val res = evaluate(it)
+                    return@map res as? Variable ?: Variable(res, true)
+                }
                 .toCollection(ArrayList())
 
         if (args.size != callee.arity()) {

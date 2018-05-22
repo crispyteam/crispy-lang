@@ -1,0 +1,17 @@
+val mk_node = fun value, left, right -> { return {"value": value, "left": left, "right": right }; };
+
+val tree = mk_node(2, mk_node(1, nil, nil), mk_node(3, nil, nil));
+
+val traverse = fun node, callback -> {
+    if node.left != nil {
+        traverse(node.left, callback);
+    }
+
+    callback(node.value);
+
+    if node.right != nil {
+        traverse(node.right, callback);
+    }
+};
+
+traverse(tree, println);

@@ -68,7 +68,7 @@ class Parser(private val lexer: Lexer) {
             advance()
             return previous()
         }
-        throw error(peek(), msg)
+        throw error(previous(), msg)
     }
 
     /**

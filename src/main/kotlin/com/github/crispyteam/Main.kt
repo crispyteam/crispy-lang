@@ -34,13 +34,14 @@ fun reportError(token: Token, msg: String) {
     System.err.println("[Error line: ${token.line}]: $msg. ${System.lineSeparator()}")
 
     val offset = " ".repeat(4)
-    val lineNum = if (inRepl) 0 else 1
     val lines = interpreter.sourceLines()
+    val line = token.line - 1
+    val start = token.startPos - 1
 
-    val linesBefore = lines.subList(0, lineNum).map { it.length }.sum() + if (inRepl) 0 else 1
+    val position = start - lines.subList(0, line).map { it.length + 1 }.sum() + token.lexeme.length
 
-    System.err.println(offset + lines[token.line - lineNum])
-    System.err.println("$offset${" ".repeat(token.startPos - linesBefore)}^")
+    System.err.println(offset + lines[line])
+    System.err.println("$offset${" ".repeat(position)}^")
 }
 
 fun runFile(fileName: String) {
@@ -63,6 +64,9 @@ fun runInteractive() {
         print(prompt)
         try {
             val line = scanner.nextLine()
+
+            if (line.isBlank()) continue
+
             code += line
             analyse(line)
             prompt = if (openBrace == 0 && openBracket == 0 && openParen == 0) {
