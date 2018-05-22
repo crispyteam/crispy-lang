@@ -38,6 +38,7 @@ fun reportError(token: Token, msg: String) {
     val line = token.line - 1
     val start = token.startPos - 1
 
+    // Calculate position of token start in line
     val position = start - lines.subList(0, line).map { it.length + 1 }.sum() + token.lexeme.length
 
     System.err.println(offset + lines[line])
