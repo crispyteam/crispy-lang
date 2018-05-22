@@ -1,74 +1,74 @@
-program             :: stmt* EOF;
+program            = { stmt }, EOF;
 
-stmt                :: simple_stmt | compound_stmt | flow_stmt;
+stmt               = simpleStmt | compoundStmt | flowStmt;
 
-simple_stmt         :: expr_stmt | var_decl | val_decl | assignment ';';
+simpleStmt         = exprStmt | varDecl | valDecl | assignment, ";";
 
-assignment          :: ((expr ('=' expr)?) | IDENTIFIER ('++' | '--') );
+assignment         = ( ( expr, [ "=", expr ] ) | IDENTIFIER, ( "++" | "--" ) );
 
-flow_stmt           :: break_stmt | continue_stmt | return_stmt;
+flowStmt           = breakStmt | continueStmt | returnStmt;
 
-break_stmt          :: 'break' ';';
+breakStmt          = 'break', ";";
 
-continue_stmt       :: 'continue' ';';
+continueStmt       = 'continue', ";";
 
-return_stmt         :: 'return' (expr)? ';';
+returnStmt         = 'return', [ expr ], ";";
 
-compound_stmt       :: if_stmt | while_stmt | for_stmt | block;
+compoundStmt       = ifStmt | whileStmt | forStmt | block;
 
-if_stmt             :: 'if' expr block ('else' (if_stmt | block))?;
+ifStmt             = 'if', expr, block, [ 'else', ( ifStmt | block ) ];
 
-while_stmt          :: 'while' expr block;
+whileStmt          = 'while', expr, block;
 
-for_stmt            :: 'for' simple_stmt? ';' (expr)? ';' (assignment)? block;
+forStmt            = 'for', [ simpleStmt ], ";", [ expr ], ";", [ assignment ], block;
 
-parameters          :: IDENTIFIER (',' IDENTIFIER)*;
+parameters         = IDENTIFIER, { ",", IDENTIFIER };
 
-block               :: '{' stmt_list '}';
+block              = "{", stmtList, "}";
 
-stmt_list           :: (stmt ';')*;
+stmtList           = { stmt, ";" };
 
-var_decl            :: 'var' IDENTIFIER ('=' expr)? ';';
+varDecl            = 'var', IDENTIFIER, [ "=", expr ], ";";
 
-val_decl            :: 'val' IDENTIFIER '=' expr ';';
+valDecl            = 'val', IDENTIFIER, "=", expr, ";";
 
-expr                :: logic_or | lambda;
+expr               = logicOr | lambda;
 
-lambda				:: 'fun' (parameters)? '->' (expr | block);
+lambda			   = 'fun', [ parameters ], "->", ( expr | block );
 
-logic_or            :: logic_and ('or' logic_and)*;
+logicOr            = logicAnd, { 'or', logicAnd };
 
-logic_and           :: equality ('and' equality)*;
+logicAnd           = equality, { 'and', equality };
 
-equality            :: comparison (('==' | '!=') comparison)*;
+equality           = comparison, { ( "==" | "!=" ), comparison };
 
-comparison          :: arith_expr (('<' | '<=' | '>' | '>=') arith_expr)*;
+comparison         = arithExpr, { ( "<" | "<=" | ">" | ">=" ), arithExpr };
 
-arith_expr          :: term (('+' | '-') term)*;
+arithExpr          = term, { ( "+" | "-" ), term };
 
-term                :: factor (('*' | '/') factor)*;
+term               = factor, { ( "*" | "/" ), factor };
 
-factor              :: ('-' | '!') factor | primary_epxr;
+factor             = ( "-" | "!" ), ( factor | primaryEpxr );
 
-primary_epxr		:: primary (call)*;
+primaryEpxr		   = primary, { call };
 
-primary             :: literal | IDENTIFIER | '(' expr ')' | 
-                       '{' (dict_items)? '}' | '[' (arg_list)? ']';
+primary            = ( literal | IDENTIFIER | "(", expr, ")" | 
+                       "{", [ dictItems ], "}" | "[", [ argList ], "]" );
 
-call                :: '(' arg_list? ')' | '[' expr ']' | '.' IDENTIFIER;
+call               = ( "(", [argList], ")" | "[", expr, "]" | ".", IDENTIFIER );
 
-arg_list            :: expr (',' expr)*;
+argList            = expr, {",", expr};
 
-dict_items			:: expr ':' expr (',' dict_items)*;
+dictItems		   = expr, ":", expr, { ",", dictItems };
 
-literal             :: 'true' | 'false' | 'nil' | STRING | NUMBER;
+literal            = 'true' | 'false' | 'nil' | STRING | NUMBER;
 
-NUMBER              :: DIGIT+ ('.' DIGIT+)?;
+NUMBER             = DIGIT { DIGIT }, [".", { DIGIT }];
 
-DIGIT               :: '0' ... '9';
+DIGIT              = ? "0" ... "9" ?;
 
-STRING              :: '"' <any char expect '"'>* '"';
+STRING             = '"' <any char expect '"'>* '"';
 
-IDENTIFIER          :: ALPHA (ALPHA | DIGIT)*;
+IDENTIFIER         = ALPHA { ALPHA | DIGIT };
 
-ALPHA               :: 'a' ... 'z' | 'A' ... 'Z' | '_';
+ALPHA              = ? "a" ... "z" ? | ? "A" ... "Z" ? | "_";
