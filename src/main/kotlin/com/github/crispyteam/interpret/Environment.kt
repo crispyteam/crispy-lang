@@ -36,7 +36,7 @@ class Environment(private val outer: Environment?) {
                 values[key.lexeme] = Variable(value, true)
                 return
             }
-            throw AssignmentError(key, "Cannot reassing value '$key'")
+            throw AssignmentError(key, "Cannot reassign value '${key.lexeme}'")
         }
 
         if (outer != null) {
