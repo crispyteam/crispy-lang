@@ -83,6 +83,9 @@ fun runInteractive() {
     }
 }
 
+/**
+ * Updates the number of open Parentheses, Brackets and Braces.
+ */
 private fun analyse(line: String) {
     openParen += line.filter { it == '(' }.count() - line.filter { it == ')' }.count()
     openBrace += line.filter { it == '{' }.count() - line.filter { it == '}' }.count()
