@@ -7,7 +7,7 @@ import java.nio.charset.Charset
 import java.util.*
 import kotlin.system.exitProcess
 
-const val version = "0.1"
+const val version = "1.0"
 private var hadError = false
 
 private val interpreter = Interpreter()
