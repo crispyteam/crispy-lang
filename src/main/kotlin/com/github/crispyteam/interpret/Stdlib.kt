@@ -53,6 +53,19 @@ fun getStdLib(): Map<String, CrispyCallable> {
                     print(prompt)
                     return readLine()
                 }
+            },
+            "clock" to object : CrispyCallable {
+                override fun arity(): Int = 0
+
+                override fun call(interpreter: Interpreter, args: List<Variable>): Any? {
+                    return System.currentTimeMillis().toDouble()
+                }
+            },
+            "str" to object : CrispyCallable {
+                override fun arity(): Int = 1
+
+                override fun call(interpreter: Interpreter, args: List<Variable>): Any? =
+                        stringify(args[0])
             }
     )
 }

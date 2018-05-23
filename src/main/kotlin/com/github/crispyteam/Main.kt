@@ -41,8 +41,11 @@ fun reportError(token: Token, msg: String) {
     // Calculate position of token start in line
     val position = start - lines.subList(0, line).map { it.length + 1 }.sum() + token.lexeme.length
 
-    System.err.println(offset + lines[line])
-    System.err.println("$offset${" ".repeat(position)}^")
+    try { // TODO fix problems and remove
+        System.err.println(offset + lines[line])
+        System.err.println("$offset${" ".repeat(position)}^")
+    } catch (ex: Exception) {
+    }
 }
 
 fun runFile(fileName: String) {

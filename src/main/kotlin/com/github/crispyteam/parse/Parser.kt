@@ -351,7 +351,7 @@ class Parser(private val lexer: Lexer) {
     private fun term(): Expr {
         var result = factor()
 
-        while (match(STAR, SLASH)) {
+        while (match(STAR, SLASH, PERCENT)) {
             result = Expr.Binary(result, previous(), factor())
         }
 
