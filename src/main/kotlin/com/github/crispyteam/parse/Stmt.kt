@@ -2,7 +2,7 @@ package com.github.crispyteam.parse
 
 import com.github.crispyteam.tokenize.Token
 
-abstract class Stmt {
+sealed class Stmt {
     abstract fun <T> accept(visitor: Visitor<T>): T
 
     data class Expression(val  expr: Expr): Stmt() {

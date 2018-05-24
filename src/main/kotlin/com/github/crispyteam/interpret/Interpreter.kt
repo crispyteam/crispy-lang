@@ -2,7 +2,6 @@ package com.github.crispyteam.interpret
 
 import com.github.crispyteam.inRepl
 import com.github.crispyteam.parse.Expr
-import com.github.crispyteam.parse.ParseError
 import com.github.crispyteam.parse.Parser
 import com.github.crispyteam.parse.Stmt
 import com.github.crispyteam.reportError
@@ -18,8 +17,8 @@ class Return(val value: Any?) : RuntimeException(null, null, false, false)
 class Break : RuntimeException(null, null, false, false)
 class Continue : RuntimeException(null, null, false, false)
 
-internal fun stringify(value: Variable): String {
-    return when (value.value) {
+internal fun stringify(value: Any?): String {
+    return when (value) {
         null -> "nil"
         is Double -> {
             var text = value.toString()
@@ -28,7 +27,6 @@ internal fun stringify(value: Variable): String {
             }
             text
         }
-        is Variable -> stringify(value.value)
         else -> value.toString()
     }
 }
@@ -36,6 +34,9 @@ internal fun stringify(value: Variable): String {
 class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     private val globals = Environment(null)
     private var environment = globals
+    private val resolver = Resolver(this)
+
+    private val distances = HashMap<Token, Int>()
 
     private var sourceCode = ""
 
@@ -51,6 +52,7 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
 
         val parser = Parser(Lexer(sourceCode))
         val statements = parser.parse()
+        resolver.resolve(statements)
 
         try {
             statements.forEach { execute(it) }
@@ -62,14 +64,24 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     fun sourceLines(): List<String> =
             sourceCode.split("\n").toCollection(ArrayList())
 
-    fun sourceCode(): String =
-            sourceCode
-
     private fun evaluate(expr: Expr): Any? =
             expr.accept(this)
 
     private fun execute(stmt: Stmt) {
         stmt.accept(this)
+    }
+
+    fun resolve(name: Token, distance: Int) {
+        distances[name] = distance
+    }
+
+    private fun lookupVariable(name: Token): Any? {
+        val distance = distances[name]
+        return if (distance != null) {
+            environment.getAt(distance, name.lexeme)
+        } else {
+            globals.get(name)
+        }
     }
 
     private fun isTruthful(obj: Any?): Boolean {
@@ -155,28 +167,27 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     }
 
     override fun visitSetBraces(setbracesStmt: Stmt.SetBraces) {
-        val variable = evaluate(setbracesStmt.obj) as? Variable
-                ?: throw RuntimeError(setbracesStmt.token, "Invalid syntax")
+        val variable = evaluate(setbracesStmt.obj)
 
-        val obj = variable.literal() as? MutableMap<String, Any?>
+        val obj = variable as? CrispyDictionary
                 ?: throw RuntimeError(setbracesStmt.token, "Invalid target for set operation")
 
         val key = evaluate(setbracesStmt.key) as? String
                 ?: throw RuntimeError(setbracesStmt.token, "Can only use strings as index in [...] syntax")
+
         var value = evaluate(setbracesStmt.value)
 
         if (value is CrispyFunction) {
             value = value.bind(obj)
         }
 
-        obj[key] = value as? Variable ?: Variable(value, true)
+        obj[key] = value
     }
 
     override fun visitSet(setStmt: Stmt.Set) {
-        val variable = evaluate(setStmt.obj) as? Variable
-                ?: throw RuntimeError(setStmt.token, "Invalid syntax")
+        val variable = evaluate(setStmt.obj)
 
-        val obj = variable.literal() as? MutableMap<String, Any?>
+        val obj = variable as? CrispyDictionary
                 ?: throw RuntimeError(setStmt.token, "Invalid target for set operation")
 
         var value = evaluate(setStmt.value)
@@ -185,14 +196,14 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
             value = value.bind(obj)
         }
 
-        obj[setStmt.key.lexeme] = value as? Variable ?: Variable(value, true)
+        obj[setStmt.key.lexeme] = value
     }
 
     override fun visitIncrement(incrementStmt: Stmt.Increment) {
         val key = incrementStmt.variable
-        val value = environment.get(incrementStmt.variable)
+        val value = lookupVariable(incrementStmt.variable)
         try {
-            environment.assign(key, (value as Variable).value as Double + 1) // TODO check type
+            environment.assign(key, value as Double + 1) // TODO check type
         } catch (err: Environment.AssignmentError) {
             throw RuntimeError(err.token, err.message ?: "Assignment Error")
         }
@@ -200,8 +211,8 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
 
     override fun visitDecrement(decrementStmt: Stmt.Decrement) {
         val key = decrementStmt.variable
-        val value = environment.get(decrementStmt.variable)
-        environment.assign(key, (value as Variable).value as Double - 1) // TODO check type
+        val value = lookupVariable(decrementStmt.variable)
+        environment.assign(key, value as Double - 1) // TODO check type
     }
 
     override fun visitWhile(whileStmt: Stmt.While) {
@@ -217,10 +228,8 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     }
 
     override fun visitBinary(binaryExpr: Expr.Binary): Any? {
-        var left = evaluate(binaryExpr.left)
-        if (left is Variable) left = left.literal()
-        var right = evaluate(binaryExpr.right)
-        if (right is Variable) right = right.literal()
+        val left = evaluate(binaryExpr.left)
+        val right = evaluate(binaryExpr.right)
 
         val op = binaryExpr.operator
 
@@ -253,7 +262,7 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
                 is Double ->
                     if (right is Double) left + right
                     else throw RuntimeError(op, "Second operator must be a number")
-                is String -> left + stringify(right as? Variable ?: Variable(right, true))
+                is String -> left + stringify(right)
                 else -> throw RuntimeError(op, "Invalid first operand")
             }
             EQUALS_EQUALS -> when (left) {
@@ -312,31 +321,27 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
             CrispyFunction(Environment(this.environment), lambdaExpr)
 
     override fun visitCall(callExpr: Expr.Call): Any? {
-        val variable = evaluate(callExpr.callee) as? Variable
-                ?: throw RuntimeError(callExpr.paren, "Error while resolving function name")
+        val variable = evaluate(callExpr.callee)
 
-        val callee = variable.literal() as? CrispyCallable
+        val callee = variable as? CrispyCallable
                 ?: throw RuntimeError(callExpr.paren, "Can only call functions")
 
         val args = callExpr.arguments
-                .map {
-                    val res = evaluate(it)
-                    return@map res as? Variable ?: Variable(res, true)
-                }
-                .toCollection(ArrayList())
+                .map { evaluate(it) }
+                .toTypedArray()
 
         if (args.size != callee.arity()) {
             throw RuntimeError(callExpr.paren, "Invalid number of arguments. Expected ${callee.arity()}, " +
                     "but got ${args.size}")
         }
 
-        return callee.call(this, args)
+        return callee.call(this, *args)
     }
 
     override fun visitGet(getExpr: Expr.Get): Any? {
-        val variable = (evaluate(getExpr.obj) as? Variable) ?: throw ParseError(getExpr.token, "Invalid syntax")
+        val variable = evaluate(getExpr.obj)
 
-        val obj = variable.literal() as? Map<*, *>
+        val obj = variable as? CrispyDictionary
                 ?: throw RuntimeError(getExpr.token, "Can only use '.' on Dictionaries")
 
         val key = getExpr.key.literal
@@ -345,23 +350,14 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     }
 
     override fun visitAccess(accessExpr: Expr.Access): Any? {
-        val variable = (evaluate(accessExpr.obj) as? Variable)
-                ?: throw RuntimeError(accessExpr.brace, "Invalid syntax")
+        val obj = evaluate(accessExpr.obj)
 
         val key = evaluate(accessExpr.key)
-        val obj = variable.literal()
 
         return when (obj) {
             is Map<*, *> -> obj[key]
             is List<*> -> when (key) {
                 is Double -> obj[key.toInt()]
-                is Variable -> {
-                    val k = key.literal()
-                    when (k) {
-                        is Double -> obj[k.toInt()]
-                        else -> throw RuntimeError(accessExpr.brace, "Can only use natural numbers as list index")
-                    }
-                }
                 else -> throw RuntimeError(accessExpr.brace, "Can only use natural numbers as list index")
             }
             else -> throw RuntimeError(accessExpr.brace, "Can only use '[...]' syntax on Dictionaries or lists")
@@ -372,20 +368,20 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
             literalExpr.value
 
     override fun visitVariable(variableExpr: Expr.Variable): Any? =
-            environment.get(variableExpr.name)
+            lookupVariable(variableExpr.name)
 
     override fun visitGrouping(groupingExpr: Expr.Grouping): Any? =
             evaluate(groupingExpr.expr)
 
-    override fun visitDictionary(dictionaryExpr: Expr.Dictionary): Any? {
+    override fun visitDictionary(dictionaryExpr: Expr.Dictionary): CrispyDictionary {
         val dict = dictionaryExpr.pairs.map {
-            evaluate(it.first) as String to Variable(evaluate(it.second), true)
+            evaluate(it.first) as String to evaluate(it.second)
         }.toMap(HashMap())
 
         dict.entries.forEach {
-            val func = it.value.value
+            val func = it.value
             if (func is CrispyFunction) {
-                it.setValue(Variable(func.bind(dict), true))
+                it.setValue(func.bind(dict))
             }
         }
 

@@ -7,7 +7,7 @@ fun getStdLib(): Map<String, CrispyCallable> {
             "println" to object : CrispyCallable {
                 override fun arity(): Int = 1
 
-                override fun call(interpreter: Interpreter, args: List<Variable>): String {
+                override fun call(interpreter: Interpreter, vararg args: Any?): String {
                     val s = stringify(args[0])
                     println(s)
                     return s
@@ -16,30 +16,30 @@ fun getStdLib(): Map<String, CrispyCallable> {
             "exit" to object : CrispyCallable {
                 override fun arity(): Int = 1
 
-                override fun call(interpreter: Interpreter, args: List<Variable>) {
-                    val variable = args[0].literal() as Double
+                override fun call(interpreter: Interpreter, vararg args: Any?) {
+                    val variable = args[0] as Double
                     exitProcess(variable.toInt())
                 }
             },
             "len" to object : CrispyCallable {
                 override fun arity(): Int = 1
 
-                override fun call(interpreter: Interpreter, args: List<Variable>): Double {
-                    val list = args[0].literal() as Collection<*>
+                override fun call(interpreter: Interpreter, vararg args: Any?): Double {
+                    val list = args[0] as Collection<*>
                     return list.size.toDouble()
                 }
             },
             "sleep" to object : CrispyCallable {
                 override fun arity(): Int = 1
 
-                override fun call(interpreter: Interpreter, args: List<Variable>): Any? {
-                    val millis = args[0].literal() as Double
+                override fun call(interpreter: Interpreter, vararg args: Any?): Any? {
+                    val millis = args[0] as Double
                     Thread.sleep(millis.toLong())
                     return millis
                 }
             },
             "input" to object : CrispyCallable {
-                override fun call(interpreter: Interpreter, args: List<Variable>): Any? {
+                override fun call(interpreter: Interpreter, vararg args: Any?): Any? {
                     return readLine()
                 }
 
@@ -48,7 +48,7 @@ fun getStdLib(): Map<String, CrispyCallable> {
             "p_input" to object : CrispyCallable {
                 override fun arity(): Int = 1
 
-                override fun call(interpreter: Interpreter, args: List<Variable>): Any? {
+                override fun call(interpreter: Interpreter, vararg args: Any?): Any? {
                     val prompt = stringify(args[0])
                     print(prompt)
                     return readLine()
@@ -57,14 +57,14 @@ fun getStdLib(): Map<String, CrispyCallable> {
             "clock" to object : CrispyCallable {
                 override fun arity(): Int = 0
 
-                override fun call(interpreter: Interpreter, args: List<Variable>): Any? {
+                override fun call(interpreter: Interpreter, vararg args: Any?): Any? {
                     return System.currentTimeMillis().toDouble()
                 }
             },
             "str" to object : CrispyCallable {
                 override fun arity(): Int = 1
 
-                override fun call(interpreter: Interpreter, args: List<Variable>): Any? =
+                override fun call(interpreter: Interpreter, vararg args: Any?): Any? =
                         stringify(args[0])
             }
     )

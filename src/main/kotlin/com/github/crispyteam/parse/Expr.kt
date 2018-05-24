@@ -2,7 +2,7 @@ package com.github.crispyteam.parse
 
 import com.github.crispyteam.tokenize.Token
 
-abstract class Expr {
+sealed class Expr {
     abstract fun <T> accept(visitor: Visitor<T>): T
 
     data class Binary(val  left: Expr, val  operator: Token, val  right: Expr): Expr() {

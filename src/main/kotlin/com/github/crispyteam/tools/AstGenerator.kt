@@ -52,7 +52,7 @@ fun defineAst(outputDir: String, baseName: String, types: List<String>) {
 
        """.trimIndent())
 
-        println("abstract class $baseName {")
+        println("sealed class $baseName {")
 
         println("    abstract fun <T> accept(visitor: Visitor<T>): T\n")
 

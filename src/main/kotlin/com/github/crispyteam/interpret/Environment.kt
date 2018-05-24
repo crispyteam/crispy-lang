@@ -2,13 +2,17 @@ package com.github.crispyteam.interpret
 
 import com.github.crispyteam.tokenize.Token
 
+private data class Variable(val value: Any?, val assignable: Boolean) {
+    override fun toString(): String = value?.toString() ?: ""
+}
+
 class Environment(private val outer: Environment?) {
     private val values = HashMap<String, Variable>()
 
     class RedefinitionError : RuntimeException()
     class AssignmentError(val token: Token, msg: String) : RuntimeException(msg)
 
-    fun get(key: Token): Variable? {
+    fun get(key: Token): Any? {
         val value = values[key.lexeme]
 
         if (value == null) {
@@ -18,7 +22,7 @@ class Environment(private val outer: Environment?) {
             throw RuntimeError(key, "Undefined variable '${key.lexeme}'")
         }
 
-        return value
+        return value.value
     }
 
     fun define(key: String, value: Any?, assignable: Boolean) {
@@ -46,4 +50,16 @@ class Environment(private val outer: Environment?) {
         }
     }
 
+    fun getAt(distance: Int, name: String): Any? =
+            ancestor(distance).values[name]?.value
+
+    fun assignAt(distance: Int, name: Token, value: Any?) {
+        ancestor(distance).assign(name, value)
+    }
+
+    private fun ancestor(distance: Int): Environment {
+        var env = this
+        for (i in 0 until distance) env = env.outer!! // TODO safe
+        return env
+    }
 }
