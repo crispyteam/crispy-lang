@@ -61,7 +61,7 @@ argList            = expr, {",", expr};
 
 dictItems		   = expr, ":", expr, { ",", dictItems };
 
-literal            = 'true' | 'false' | 'nil' | 'self | STRING | NUMBER;
+literal            = 'true' | 'false' | 'nil' | 'self' | STRING | NUMBER;
 
 NUMBER             = DIGIT { DIGIT }, [".", { DIGIT }];
 
