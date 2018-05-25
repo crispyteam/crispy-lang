@@ -13,16 +13,11 @@ class CrispyFunction(
 ) : CrispyCallable {
     private var isMethod = false
 
-    init {
-        declaration.parameters.forEach {
-            closure.define(it.lexeme, null, true)
-        }
-    }
-
     internal fun bind(self: Map<String, Any?>): CrispyFunction {
+        val env = Environment(closure)
         isMethod = true
-        closure.define("self", self, false)
-        return CrispyFunction(closure, declaration)
+        env.define("self", self, false)
+        return CrispyFunction(env, declaration)
     }
 
     override fun arity(): Int =

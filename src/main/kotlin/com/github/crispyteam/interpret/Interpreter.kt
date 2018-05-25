@@ -135,7 +135,7 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     }
 
     override fun visitValDecl(valdeclStmt: Stmt.ValDecl) {
-        val name = valdeclStmt.name.literal as? String ?: throw RuntimeError(valdeclStmt.name, "Type mismatch")
+        val name = valdeclStmt.name.lexeme
         val value = evaluate(valdeclStmt.value)
         try {
             environment.define(name, value, false)
@@ -145,7 +145,7 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     }
 
     override fun visitVarDecl(vardeclStmt: Stmt.VarDecl) {
-        val name = vardeclStmt.name.literal as? String ?: throw RuntimeError(vardeclStmt.name, "Type mismatch")
+        val name = vardeclStmt.name.lexeme
         val value = if (vardeclStmt.value != null)
             evaluate(vardeclStmt.value)
         else null
@@ -160,7 +160,12 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     override fun visitAssignment(assignmentStmt: Stmt.Assignment) {
         val value = evaluate(assignmentStmt.value)
         try {
-            environment.assign(assignmentStmt.name, value)
+            val distance = distances[assignmentStmt.name]
+            if (distance != null) {
+                environment.assignAt(distance, assignmentStmt.name, value)
+            } else {
+                globals.assign(assignmentStmt.name, value)
+            }
         } catch (err: Environment.AssignmentError) {
             throw RuntimeError(assignmentStmt.name, err.message ?: "")
         }
@@ -318,7 +323,7 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     }
 
     override fun visitLambda(lambdaExpr: Expr.Lambda): Any? =
-            CrispyFunction(Environment(this.environment), lambdaExpr)
+            CrispyFunction(environment, lambdaExpr)
 
     override fun visitCall(callExpr: Expr.Call): Any? {
         val variable = evaluate(callExpr.callee)

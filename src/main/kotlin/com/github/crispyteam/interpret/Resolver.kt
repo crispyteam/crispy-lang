@@ -10,7 +10,7 @@ class ResolveError(val token: Token, msg: String) : RuntimeException(msg)
 
 class Resolver(private val interpreter: Interpreter) : Stmt.Visitor<Unit>, Expr.Visitor<Unit> {
     private val scopes = Stack<MutableMap<String, Boolean>>()
-    private var inMethod = false
+    private var inLambda = false
 
     fun resolve(statements: List<Stmt>) {
         statements.forEach { resolve(it) }
@@ -78,9 +78,9 @@ class Resolver(private val interpreter: Interpreter) : Stmt.Visitor<Unit>, Expr.
     }
 
     override fun visitBlock(blockStmt: Stmt.Block) {
-        beginScope()
+        if (!inLambda) beginScope()
         blockStmt.statements.forEach { resolve(it) }
-        endScope()
+        if (!inLambda) endScope()
     }
 
     override fun visitIf(ifStmt: Stmt.If) {
@@ -143,11 +143,13 @@ class Resolver(private val interpreter: Interpreter) : Stmt.Visitor<Unit>, Expr.
 
     override fun visitLambda(lambdaExpr: Expr.Lambda) {
         beginScope()
+        inLambda = true
         lambdaExpr.parameters.forEach {
             declare(it)
             define(it)
         }
         resolve(lambdaExpr.body)
+        inLambda = false
         endScope()
     }
 

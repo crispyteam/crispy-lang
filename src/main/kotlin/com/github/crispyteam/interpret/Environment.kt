@@ -6,7 +6,7 @@ private data class Variable(val value: Any?, val assignable: Boolean) {
     override fun toString(): String = value?.toString() ?: ""
 }
 
-class Environment(private val outer: Environment?) {
+class Environment(val outer: Environment?) {
     private val values = HashMap<String, Variable>()
 
     class RedefinitionError : RuntimeException()
@@ -54,7 +54,7 @@ class Environment(private val outer: Environment?) {
             ancestor(distance).values[name]?.value
 
     fun assignAt(distance: Int, name: Token, value: Any?) {
-        ancestor(distance).assign(name, value)
+        ancestor(distance).values[name.lexeme] = Variable(value, true)
     }
 
     private fun ancestor(distance: Int): Environment {
