@@ -242,6 +242,9 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
             MINUS ->
                 if (left is Double && right is Double) left - right
                 else throw RuntimeError(op, "Both operands must be numbers")
+            OR ->
+                if (left is Boolean && right is Boolean) left || right
+                else throw RuntimeError(op, "Both operands must be boolean")
             PERCENT ->
                 if (left is Double && right is Double) left % right
                 else throw RuntimeError(op, "Both operands must be numbers")

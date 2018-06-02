@@ -1,74 +1,78 @@
-program            = { stmt }, EOF;
+program             = { stmt }, EOF;
 
-stmt               = simpleStmt | compoundStmt | flowStmt;
+stmt                = simpleStmt | compoundStmt | flowStmt;
 
-simpleStmt         = exprStmt | varDecl | valDecl | assignment, ";";
+simpleStmt          = exprStmt | varDecl | valDecl | assignment;
 
-assignment         = ( ( expr, [ "=", expr ] ) | IDENTIFIER, ( "++" | "--" ) );
+exprStmt            = expr, ";";
 
-flowStmt           = breakStmt | continueStmt | returnStmt;
+varDecl             = 'var', IDENTIFIER, [ "=", expr ], ";";
 
-breakStmt          = 'break', ";";
+valDecl             = 'val', IDENTIFIER, "=", expr, ";";
 
-continueStmt       = 'continue', ";";
+assignment          = expr, "=", expr, ";";
 
-returnStmt         = 'return', [ expr ], ";";
+compoundStmt		= whileStmt | forStmt;
 
-compoundStmt       = ifStmt | whileStmt | forStmt | block;
+flowStmt            = breakStmt | continueStmt | returnStmt;
 
-ifStmt             = 'if', expr, block, [ 'else', ( ifStmt | block ) ];
+whileStmt           = 'while', expr, blockStmt;
 
-whileStmt          = 'while', expr, block;
+forStmt             = 'for', [ simpleStmt ], ";", [ expr ], ";", [ assignment ], blockStmt;
 
-forStmt            = 'for', [ simpleStmt ], ";", [ expr ], ";", [ assignment ], block;
+blockStmt			= "{", stmtList, "}";
 
-parameters         = IDENTIFIER, { ",", IDENTIFIER };
+breakStmt           = 'break', ";";
 
-block              = "{", stmtList, "}";
+continueStmt        = 'continue', ";";
 
-stmtList           = { stmt, ";" };
+returnStmt          = 'return', [ expr ], ";";
 
-varDecl            = 'var', IDENTIFIER, [ "=", expr ], ";";
+parameters          = IDENTIFIER, { ",", IDENTIFIER };
 
-valDecl            = 'val', IDENTIFIER, "=", expr, ";";
+stmtList            = { stmt, ";" };
 
-expr               = logicOr | lambda;
+expr                = ifExpr | lambda | logicOr;
 
-lambda			   = 'fun', [ parameters ], "->", ( expr | block );
+ifExpr 			    = 'if', expr, blockExpr, [ 'else', ( ifExpr | blockExpr ) ];
 
-logicOr            = logicAnd, { 'or', logicAnd };
+blockExpr           = "{", stmtList, "}";
 
-logicAnd           = equality, { 'and', equality };
+lambda			    = 'fun', [ parameters ], "->", ( expr | blockExpr );
 
-equality           = comparison, { ( "==" | "!=" ), comparison };
+logicOr             = logicAnd, { 'or', logicAnd };
 
-comparison         = arithExpr, { ( "<" | "<=" | ">" | ">=" ), arithExpr };
+logicAnd            = equality, { 'and', equality };
 
-arithExpr          = term, { ( "+" | "-" ), term };
+equality            = comparison, { ( "==" | "!=" ), comparison };
 
-term               = factor, { ( "*" | "/" ), factor };
+comparison          = arithExpr, { ( "<" | "<=" | ">" | ">=" ), arithExpr };
 
-factor             = ( "-" | "!" ), ( factor | primaryEpxr );
+arithExpr           = term, { ( "+" | "-" ), term };
 
-primaryEpxr		   = primary, { call };
+term                = factor, { ( "*" | "/" ), factor };
 
-primary            = ( literal | IDENTIFIER | "(", expr, ")" | 
+factor              =  ['!' | '-'], primaryEpxr;
+
+primaryEpxr		    = primary, { call };
+
+primary             = ( literal | IDENTIFIER, ['++' | '--'] | "(", expr, ")" | 
                        "{", [ dictItems ], "}" | "[", [ argList ], "]" );
 
-call               = ( "(", [argList], ")" | "[", expr, "]" | ".", IDENTIFIER );
+call                = ( "(", [argList], ")" | "[", expr, "]" | ".", IDENTIFIER );
 
-argList            = expr, {",", expr};
+argList             = expr, {",", expr};
 
-dictItems		   = expr, ":", expr, { ",", dictItems };
+dictItems		    = STRING, ":", expr, { ",", dictItems };
 
-literal            = 'true' | 'false' | 'nil' | STRING | NUMBER;
+literal             = 'true' | 'false' | 'nil' | STRING | NUMBER;
 
-NUMBER             = DIGIT { DIGIT }, [".", { DIGIT }];
+NUMBER              = DIGIT { DIGIT }, [".", { DIGIT }];
 
-DIGIT              = ? "0" ... "9" ?;
+DIGIT               = ? "0" ... "9" ?;
 
-STRING             = '"' <any char expect '"'>* '"';
+STRING              = '"' <any char expect '"'>* '"';
 
-IDENTIFIER         = ALPHA { ALPHA | DIGIT };
+IDENTIFIER          = ALPHA { ALPHA | DIGIT };
 
-ALPHA              = ? "a" ... "z" ? | ? "A" ... "Z" ? | "_";
+ALPHA               = ? "a" ... "z" ? | ? "A" ... "Z" ? | "_";

@@ -59,6 +59,9 @@ class Parser(private val lexer: Lexer) {
     private fun peek(): Token =
             tokens[position]
 
+    private fun peekNext(): Token =
+            tokens[position + 1]
+
     /**
      * Consumes the current token and advances to the next one.
      * @return the token, that was consumed
@@ -116,6 +119,9 @@ class Parser(private val lexer: Lexer) {
 
     private fun check(type: TokenType): Boolean =
             peek().type == type
+
+    private fun checkNext(type: TokenType): Boolean =
+            peekNext().type == type
 
     private fun stmt(): Stmt =
             when {
@@ -177,7 +183,12 @@ class Parser(private val lexer: Lexer) {
 
         consume(MINUS_GREATER, "Expected '->' after parameters")
         val body = when {
-            check(OPEN_BRACE) -> block()
+            check(OPEN_BRACE) -> {
+                when {
+                    checkNext(STRING) -> Stmt.Expression(primaryExpr())
+                    else -> block()
+                }
+            }
             else -> Stmt.Expression(expr())
         }
 
