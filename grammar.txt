@@ -38,7 +38,7 @@ ifExpr 			    = 'if', expr, blockExpr, [ 'else', ( ifExpr | blockExpr ) ];
 
 blockExpr           = "{", stmtList, "}";
 
-lambda			    = 'fun', [ parameters ], "->", ( expr | blockExpr );
+lambda			    = 'fun', [ parameters ], "->", ( expr | blockStmt );
 
 logicOr             = logicAnd, { 'or', logicAnd };
 
