@@ -10,15 +10,15 @@ varDecl             = 'var', IDENTIFIER, [ "=", expr ], ";";
 
 valDecl             = 'val', IDENTIFIER, "=", expr, ";";
 
-assignment          = expr, "=", expr, ";";
-
-compoundStmt		= whileStmt | forStmt;
+compoundStmt		= whileStmt | forStmt | ifStmt;
 
 flowStmt            = breakStmt | continueStmt | returnStmt;
 
 whileStmt           = 'while', expr, blockStmt;
 
 forStmt             = 'for', [ simpleStmt ], ";", [ expr ], ";", [ assignment ], blockStmt;
+
+ifStmt				= 'if', expr, blockStmt, [ 'else', ( ifStmt | blockStmt ) ];
 
 blockStmt			= "{", stmtList, "}";
 
@@ -32,7 +32,9 @@ parameters          = IDENTIFIER, { ",", IDENTIFIER };
 
 stmtList            = { stmt, ";" };
 
-expr                = ifExpr | lambda | logicOr;
+expr                = ifExpr | lambda | assignment | blockExpr;
+
+assignment          = logicOr, ["=", expr], ";";
 
 ifExpr 			    = 'if', expr, blockExpr, [ 'else', ( ifExpr | blockExpr ) ];
 
@@ -50,7 +52,7 @@ comparison          = arithExpr, { ( "<" | "<=" | ">" | ">=" ), arithExpr };
 
 arithExpr           = term, { ( "+" | "-" ), term };
 
-term                = factor, { ( "*" | "/" ), factor };
+term                = factor, { ( "*" | "/" | "%"), factor };
 
 factor              =  ['!' | '-'], primaryEpxr;
 
