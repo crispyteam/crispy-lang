@@ -12,10 +12,12 @@ See the LICENSE file for additional information.
 
 <a name="introduction"/>  
 ## Introduction  
+
 Crispy is an easy to learn scripting language with a minimalistic and elegant syntax.  
 
 <a name="syntax"/>  
 ## Syntax  
+
 **The complete grammar specification can be found in the "grammar.txt" file**   
 **The following documentation is written for the C implementation of Crispy which can be found <a href="https://github.com/funkschy/crispy">here</a>!**  
 
@@ -107,9 +109,10 @@ You can use any expression as a lambda body
 	println(fib(20)) // prints 6765 
   
 As you can see, recursion works aswell.
-  
+
 <a name="implementation_details" />
 ## Implementation details  
+  
 ### 1. Compilation  
 The first part of running any Crispy program is the compilation. During this phase, the source code is broken down into its individual pieces (Tokens). Since Crispy only needs a lookahead of one Token, the source code is actually scanned one Token at a time. The compiler uses recursive descent parsing to convert complex productions into simple bytecode instructions. These bytecode instructions then get interpreted by a simple RISC virtual processor. The compiler is also responsible for initialising any constants found in the code. This means that strings are actually initialised (and <a href="https://en.wikipedia.org/wiki/String_interning">interned</a>) during compilation.
 
