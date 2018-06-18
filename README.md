@@ -6,5 +6,5 @@ See the LICENSE file for additional information.
 [Introduction](#introduction)
 
 <a name="introduction"/>
-## Introduction
+### Introduction
 Crispy is an easy to learn scripting language with a minimalistic and elegant syntax.
