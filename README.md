@@ -111,7 +111,20 @@ You can use any expression as a lambda body
 	println(fib(20)) // prints 6765 
   
 As you can see, recursion works aswell.
-
+  
+### and & or  
+The result of an expression of the form expr 'and' expr is true if both of the expressions evaluate to true. If either one is false, the whole result will be false aswell.
+  
+	println(true and true)  // prints true
+	println(true and false) // prints false
+  
+The result of an expression of the form expr 'or' expr is true if one, or both of the expressions evaluate to true. Only if both evaluate to false, the whole result will be false aswell.
+  
+	println(true or true)   // prints true
+	println(true or false)  // prints true
+	println(false or false) // prints false
+  
+  
 <a name="implementation_details" />
   
 ## Implementation details  
