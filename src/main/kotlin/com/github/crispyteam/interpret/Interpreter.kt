@@ -189,11 +189,6 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
                 ?: throw RuntimeError(setbracesStmt.token, "Can only use strings as index in [...] syntax")
 
         val value = evaluate(setbracesStmt.value)
-
-        if (value is CrispyFunction) {
-            value.bind(obj)
-        }
-
         obj[key] = value
     }
 
@@ -204,11 +199,6 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
                 ?: throw RuntimeError(setStmt.token, "Invalid target for set operation")
 
         val value = evaluate(setStmt.value)
-
-        if (value is CrispyFunction) {
-            value.bind(obj)
-        }
-
         obj[setStmt.key.lexeme] = value
     }
 
@@ -393,15 +383,7 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
             evaluate(it.first) as String to evaluate(it.second)
         }.toMap(HashMap())
 
-        dict.entries.forEach {
-            val func = it.value
-            if (func is CrispyFunction) {
-                func.bind(dict)
-            }
-        }
-
         this.environment = this.environment.outer!!
-
         return dict
     }
 

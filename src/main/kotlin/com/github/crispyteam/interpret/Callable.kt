@@ -12,12 +12,6 @@ class CrispyFunction(
         private var closure: Environment,
         private val declaration: Expr.Lambda
 ) : CrispyCallable {
-    var self: Map<String, Any?>? = null
-
-    internal fun bind(self: Map<String, Any?>) {
-        this.self = self
-    }
-
     override fun arity(): Int =
             declaration.parameters.size
 
@@ -26,8 +20,6 @@ class CrispyFunction(
         declaration.parameters.withIndex().forEach { (i, it) ->
             closure.define(it.lexeme, args[i], true)
         }
-
-        if (self != null) closure.define("self", self, false)
 
         try {
             when (declaration.body) {
