@@ -33,9 +33,9 @@ internal fun stringify(value: Any?): String {
 
 class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
     private val globals = Environment(null)
+
     private var environment = globals
     private val resolver = Resolver(this)
-
     private val distances = HashMap<Token, Int>()
 
     private var sourceCode = ""
@@ -91,7 +91,15 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
         return true
     }
 
-    internal fun executeBlock(environment: Environment, stmt: Stmt) {
+    internal fun executeLambdaBlock(environment: Environment, block: Stmt.Block) {
+        executeBlock(Environment(environment), block)
+    }
+
+    internal fun executeLambdaSingle(environment: Environment, stmt: Stmt) {
+        executeBlock(environment, stmt)
+    }
+
+    private fun executeBlock(environment: Environment, stmt: Stmt) {
         val previous = this.environment
         this.environment = environment
 
@@ -180,10 +188,10 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
         val key = evaluate(setbracesStmt.key) as? String
                 ?: throw RuntimeError(setbracesStmt.token, "Can only use strings as index in [...] syntax")
 
-        var value = evaluate(setbracesStmt.value)
+        val value = evaluate(setbracesStmt.value)
 
         if (value is CrispyFunction) {
-            value = value.bind(obj)
+            value.bind(obj)
         }
 
         obj[key] = value
@@ -195,10 +203,10 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
         val obj = variable as? CrispyDictionary
                 ?: throw RuntimeError(setStmt.token, "Invalid target for set operation")
 
-        var value = evaluate(setStmt.value)
+        val value = evaluate(setStmt.value)
 
         if (value is CrispyFunction) {
-            value = value.bind(obj)
+            value.bind(obj)
         }
 
         obj[setStmt.key.lexeme] = value
@@ -379,6 +387,8 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
             evaluate(groupingExpr.expr)
 
     override fun visitDictionary(dictionaryExpr: Expr.Dictionary): CrispyDictionary {
+        this.environment = Environment(this.environment)
+
         val dict = dictionaryExpr.pairs.map {
             evaluate(it.first) as String to evaluate(it.second)
         }.toMap(HashMap())
@@ -386,9 +396,11 @@ class Interpreter : Stmt.Visitor<Unit>, Expr.Visitor<Any?> {
         dict.entries.forEach {
             val func = it.value
             if (func is CrispyFunction) {
-                it.setValue(func.bind(dict))
+                func.bind(dict)
             }
         }
+
+        this.environment = this.environment.outer!!
 
         return dict
     }

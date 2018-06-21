@@ -10,7 +10,7 @@ class ResolveError(val token: Token, msg: String) : RuntimeException(msg)
 
 class Resolver(private val interpreter: Interpreter) : Stmt.Visitor<Unit>, Expr.Visitor<Unit> {
     private val scopes = Stack<MutableMap<String, Boolean>>()
-    private var inLambda = false
+    private var lambdaCounter = 0
 
     fun resolve(statements: List<Stmt>) {
         statements.forEach { resolve(it) }
@@ -78,9 +78,9 @@ class Resolver(private val interpreter: Interpreter) : Stmt.Visitor<Unit>, Expr.
     }
 
     override fun visitBlock(blockStmt: Stmt.Block) {
-        if (!inLambda) beginScope()
+        beginScope()
         blockStmt.statements.forEach { resolve(it) }
-        if (!inLambda) endScope()
+        endScope()
     }
 
     override fun visitIf(ifStmt: Stmt.If) {
@@ -125,11 +125,11 @@ class Resolver(private val interpreter: Interpreter) : Stmt.Visitor<Unit>, Expr.
     }
 
     override fun visitIncrement(incrementStmt: Stmt.Increment) {
-
+        resolveLocal(incrementStmt.variable)
     }
 
     override fun visitDecrement(decrementStmt: Stmt.Decrement) {
-
+        resolveLocal(decrementStmt.variable)
     }
 
     override fun visitBinary(binaryExpr: Expr.Binary) {
@@ -143,13 +143,13 @@ class Resolver(private val interpreter: Interpreter) : Stmt.Visitor<Unit>, Expr.
 
     override fun visitLambda(lambdaExpr: Expr.Lambda) {
         beginScope()
-        inLambda = true
+        ++lambdaCounter
         lambdaExpr.parameters.forEach {
             declare(it)
             define(it)
         }
         resolve(lambdaExpr.body)
-        inLambda = false
+        --lambdaCounter
         endScope()
     }
 
@@ -186,10 +186,13 @@ class Resolver(private val interpreter: Interpreter) : Stmt.Visitor<Unit>, Expr.
     }
 
     override fun visitDictionary(dictionaryExpr: Expr.Dictionary) {
+        beginScope()
+        scopes.peek()["self"] = true
         dictionaryExpr.pairs.forEach {
             resolve(it.first)
             resolve(it.second)
         }
+        endScope()
     }
 
     override fun visitCrispyList(crispylistExpr: Expr.CrispyList) {

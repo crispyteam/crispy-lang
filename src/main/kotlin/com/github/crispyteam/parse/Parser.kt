@@ -12,6 +12,7 @@ class ParseError(val token: Token, msg: String) :
 class Parser(private val lexer: Lexer) {
     private lateinit var tokens: List<Token>
     private var position = 0
+    private var inObject = false
 
     fun parse(): List<Stmt> {
         tokens = lexer.lex()
@@ -186,6 +187,10 @@ class Parser(private val lexer: Lexer) {
 
     private fun paramList(): List<Token> {
         val params = ArrayList<Token>()
+        if (inObject) {
+            val p = peek()
+            params += Token(IDENTIFIER, p.line, p.startPos, "self", null)
+        }
 
         if (!check(MINUS_GREATER)) {
             do {
@@ -414,6 +419,7 @@ class Parser(private val lexer: Lexer) {
             match(TRUE) -> Expr.Literal(true)
             match(FALSE) -> Expr.Literal(false)
             match(NIL) -> Expr.Literal(null)
+        // match(SELF) -> Expr.Self(previous())
             match(NUMBER) || match(STRING) -> Expr.Literal(previous().literal)
 
             match(IDENTIFIER) -> Expr.Variable(previous())
@@ -423,10 +429,15 @@ class Parser(private val lexer: Lexer) {
                 Expr.Grouping(expr)
             }
 
-            match(OPEN_BRACE) -> if (!match(CLOSE_BRACE)) {
-                Expr.Dictionary(dictItems())
-            } else {
-                Expr.Dictionary(emptyList())
+            match(OPEN_BRACE) -> {
+                inObject = true
+                val dict = if (!match(CLOSE_BRACE)) {
+                    Expr.Dictionary(dictItems())
+                } else {
+                    Expr.Dictionary(emptyList())
+                }
+                inObject = false
+                dict
             }
 
             match(OPEN_BRACKET) -> if (!match(CLOSE_BRACKET)) {

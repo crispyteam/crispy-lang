@@ -16,7 +16,8 @@ val p2 = {
 val personen = [p, p1, p2];
 
 for var i = 0; i < len(personen); i++ {
-    personen[i]["greet"] = fun -> println("Ich bin " + self.name);
+    val name = personen[i].name;
+    personen[i]["greet"] = fun -> println("Ich bin " + name);
 }
 
 for var i = 0; i < len(personen); i++ {

@@ -1,6 +1,7 @@
 package com.github.crispyteam.interpret
 
 import com.github.crispyteam.parse.Expr
+import com.github.crispyteam.parse.Stmt
 
 interface CrispyCallable {
     fun arity(): Int
@@ -11,13 +12,10 @@ class CrispyFunction(
         private var closure: Environment,
         private val declaration: Expr.Lambda
 ) : CrispyCallable {
-    private var isMethod = false
+    var self: Map<String, Any?>? = null
 
-    internal fun bind(self: Map<String, Any?>): CrispyFunction {
-        val env = Environment(closure)
-        isMethod = true
-        env.define("self", self, false)
-        return CrispyFunction(env, declaration)
+    internal fun bind(self: Map<String, Any?>) {
+        this.self = self
     }
 
     override fun arity(): Int =
@@ -29,8 +27,13 @@ class CrispyFunction(
             closure.define(it.lexeme, args[i], true)
         }
 
+        if (self != null) closure.define("self", self, false)
+
         try {
-            interpreter.executeBlock(closure, declaration.body)
+            when (declaration.body) {
+                is Stmt.Block -> interpreter.executeLambdaBlock(closure, declaration.body)
+                else -> interpreter.executeLambdaSingle(closure, declaration.body)
+            }
         } catch (returnValue: Return) {
             return returnValue.value
         }
