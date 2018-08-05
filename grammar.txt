@@ -10,17 +10,15 @@ varDecl             = 'var', IDENTIFIER, [ "=", expr ], ";";
 
 valDecl             = 'val', IDENTIFIER, "=", expr, ";";
 
-compoundStmt		= whileStmt | forStmt | ifStmt;
+compoundStmt        = whileStmt | forStmt;
 
 flowStmt            = breakStmt | continueStmt | returnStmt;
 
-whileStmt           = 'while', expr, blockStmt;
+whileStmt           = 'while', expr, loopBody;
 
-forStmt             = 'for', [ simpleStmt ], ";", [ expr ], ";", [ assignment ], blockStmt;
+forStmt             = 'for', [ simpleStmt ], ";", [ expr ], ";", [ assignment ], loopBody;
 
-ifStmt				= 'if', expr, blockStmt, [ 'else', ( ifStmt | blockStmt ) ];
-
-blockStmt			= "{", stmtList, "}";
+loopBody           = "{", stmtList, "}";
 
 breakStmt           = 'break', ";";
 
@@ -36,11 +34,11 @@ expr                = ifExpr | lambda | assignment | blockExpr;
 
 assignment          = logicOr, ["=", expr], ";";
 
-ifExpr 			    = 'if', expr, blockExpr, [ 'else', ( ifExpr | blockExpr ) ];
+ifExpr              = 'if', expr, blockExpr, [ 'else', ( ifExpr | blockExpr ) ];
 
 blockExpr           = "{", stmtList, "}";
 
-lambda			    = 'fun', [ parameters ], "->", ( expr | blockStmt );
+lambda              = 'fun', [ parameters ], "->", ( expr | loopBody );
 
 logicOr             = logicAnd, { 'or', logicAnd };
 
@@ -54,18 +52,20 @@ arithExpr           = term, { ( "+" | "-" ), term };
 
 term                = factor, { ( "*" | "/" | "%"), factor };
 
-factor              =  ['!' | '-'], primaryEpxr;
+factor              = ['!' | '-'], primaryEpxr;
 
-primaryEpxr		    = primary, { call };
+power				= primaryEpxr [ "**", factor ]
+
+primaryEpxr         = primary, { call };
 
 primary             = ( literal | IDENTIFIER, ['++' | '--'] | "(", expr, ")" | 
-                       "{", [ dictItems ], "}" | "[", [ argList ], "]" );
+                      "{", [ dictItems ], "}" | "[", [ argList ], "]" );
 
 call                = ( "(", [argList], ")" | "[", expr, "]" | ".", IDENTIFIER );
 
 argList             = expr, {",", expr};
 
-dictItems		    = STRING, ":", expr, { ",", dictItems };
+dictItems           = STRING, ":", expr, { ",", dictItems };
 
 literal             = 'true' | 'false' | 'nil' | STRING | NUMBER;
 

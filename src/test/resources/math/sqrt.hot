@@ -1,0 +1,9 @@
+val sqrt = fun x -> { 
+	var z = 1; 
+	for var i = 0; i < 10; i++ { 
+		z = z - (z * z - x) / (2 * z);
+	} 
+	return z; 
+};
+
+println(sqrt(2));
